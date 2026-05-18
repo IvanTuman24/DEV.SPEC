@@ -1,6 +1,26 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
+// --- УПРАВЛЕНИЕ КАЛЕНДАРЕМ (ДЕФОЛТНОЕ СЕГОДНЯ + БЛОК ПРОШЛОГО) ---
+document.addEventListener("DOMContentLoaded", function() {
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        let mm = today.getMonth() + 1; 
+        let dd = today.getDate();
+
+        if (dd < 10) dd = '0' + dd;
+        if (mm < 10) mm = '0' + mm;
+
+        const formattedToday = `${yyyy}-${mm}-${dd}`;
+        
+        dateInput.value = formattedToday; // Ставим сегодняшнее число
+        dateInput.min = formattedToday;   // Запрещаем выбирать вчера и ранее
+    }
+});
+
+// Отображение имени прикрепленного файла
 document.getElementById('fileInput').addEventListener('change', function() {
     const preview = document.getElementById('file-name-preview');
     if (this.files.length > 0) {
@@ -10,6 +30,7 @@ document.getElementById('fileInput').addEventListener('change', function() {
     }
 });
 
+// Отправка формы в Telegram
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -21,17 +42,20 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     statusMsg.textContent = "Отправка заявки исполнителям...";
 
     const tech = document.querySelector('input[name="tech"]:checked').value;
-    const date = document.getElementById('date').value;
+    const rawDate = document.getElementById('date').value;
     const duration = document.getElementById('duration').value;
     const username = document.getElementById('username').value;
     const comment = document.getElementById('comment').value;
     const fileInput = document.getElementById('fileInput');
 
+    // Переводим дату из YYYY-MM-DD в человеческий вид DD.MM.YYYY
+    const formattedDate = rawDate.split('-').reverse().join('.');
+
     const messageText = 
 `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
 ━━━━━━━━━━━━━━━
 ⚙️ **Техника:** ${tech}
-📅 **Когда:** ${date}
+📅 **Когда:** ${formattedDate}
 ⏳ **На сколько:** ${duration}
 👤 **Заказчик:** ${username}
 ━━━━━━━━━━━━━━━
@@ -71,6 +95,10 @@ ${comment}`;
         statusMsg.textContent = "✅ Заявка успешно доставлена постановщику задач!";
         document.getElementById('orderForm').reset();
         document.getElementById('file-name-preview').textContent = '';
+        
+        // Переинициализируем сегодняшнюю дату после сброса формы
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
 
     } catch (error) {
         console.error(error);
