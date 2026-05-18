@@ -8,6 +8,14 @@
 </head>
 <body>
 
+<div class="theme-switch-wrapper">
+    <span class="theme-label">LIGHT</span>
+    <label class="theme-switch">
+        <input type="checkbox" id="theme-toggle">
+        <div class="slider"></div>
+    </label>
+</div>
+
 <div class="app-container">
     <header class="main-header">
         <h1>ЗАКАЗ ТЕХНИКИ</h1>
@@ -17,7 +25,6 @@
     <main class="form-wrapper">
         <form id="orderForm">
             
-            <!-- 1. ТЕХНИКА -->
             <div class="form-group">
                 <label class="group-title">1. ТЕХНИКА</label>
                 <div class="tech-grid">
@@ -47,44 +54,31 @@
                 </div>
             </div>
 
-            <!-- 2. КОГДА (ДАТА И ПОЛОВИНА ДНЯ) -->
-            <div class="form-group">
-                <label class="group-title">2. КОГДА</label>
-                <div class="date-section">
-                    <input type="date" id="date" name="date" required>
-                    
-                    <div class="day-half-selector">
-                        <label class="half-option">
-                            <input type="radio" name="dayHalf" value="Первая половина дня" checked>
-                            <span class="half-label">☀️ Первая половина</span>
-                        </label>
-                        <label class="half-option">
-                            <input type="radio" name="dayHalf" value="Вторая половина дня">
-                            <span class="half-label">🌅 Вторая половина</span>
-                        </label>
-                    </div>
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="date">2. КОГДА</label>
+                    <select id="date" name="date" required>
+                        <option value="📅 Сегодня">Сегодня</option>
+                        <option value="📅 Завтра">Завтра</option>
+                    </select>
+                </div>
+
+                <div class="form-group half">
+                    <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
+                    <input type="text" id="duration" name="duration" placeholder="Например: 4 часа / Смена" required>
                 </div>
             </div>
 
-            <!-- 3. НА СКОЛЬКО ВРЕМЕНИ -->
-            <div class="form-group">
-                <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
-                <input type="text" id="duration" name="duration" placeholder="4 часа / Смена" required>
-            </div>
-
-            <!-- 4. ЗАКАЗЧИК -->
             <div class="form-group">
                 <label for="username">4. ЗАКАЗЧИК</label>
-                <input type="text" id="username" name="username" placeholder="Имя или ник в Telegram" required>
+                <input type="text" id="username" name="username" placeholder="Ваше имя или ник в Telegram" required>
             </div>
 
-            <!-- 5. КОММЕНТАРИЙ И ТЗ -->
             <div class="form-group">
                 <label for="comment">5. КОММЕНТАРИЙ И ТЗ</label>
                 <textarea id="comment" name="comment" placeholder="Подробно опишите задачу, локацию и нюансы работы..." required></textarea>
             </div>
 
-            <!-- 6. ПРИКРЕПИТЬ ФАЙЛ -->
             <div class="form-group">
                 <label class="file-label">6. ПРИКРЕПИТЬ ФАЙЛ (ФОТО/ДОК)</label>
                 <div class="file-upload-zone">
