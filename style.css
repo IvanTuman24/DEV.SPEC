@@ -1,225 +1,100 @@
-/* Базовые сбросы и шрифты */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ техники — Минимализм</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-body {
-    background-color: #0f0f11;
-    color: #e4e4e7;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-}
+<div class="theme-switch-wrapper">
+    <span class="theme-label">LIGHT</span>
+    <label class="theme-switch">
+        <input type="checkbox" id="theme-toggle">
+        <div class="slider"></div>
+    </label>
+</div>
 
-.app-container {
-    width: 100%;
-    max-width: 550px;
-    background-color: #16161a;
-    border: 1px solid #27272a;
-    border-radius: 12px;
-    padding: 40px 30px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-}
+<div class="app-container">
+    <header class="main-header">
+        <h1>ЗАКАЗ ТЕХНИКИ</h1>
+        <p class="subtitle">Формирование технического задания для исполнителей</p>
+    </header>
 
-/* Шапка сайта */
-.main-header {
-    text-align: center;
-    margin-bottom: 35px;
-    border-bottom: 1px solid #27272a;
-    padding-bottom: 20px;
-}
+    <main class="form-wrapper">
+        <form id="orderForm">
+            
+            <div class="form-group">
+                <label class="group-title">1. ТЕХНИКА</label>
+                <div class="tech-grid">
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🚜 Трактор" checked>
+                        <div class="card-content">
+                            <span class="icon">🚜</span>
+                            <span class="title">Трактор</span>
+                        </div>
+                    </label>
+                    
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🏗 Манипулятор">
+                        <div class="card-content">
+                            <span class="icon">🏗</span>
+                            <span class="title">Манипулятор</span>
+                        </div>
+                    </label>
+                    
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🛠 Мейкер">
+                        <div class="card-content">
+                            <span class="icon">🛠</span>
+                            <span class="title">Мейкер</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
 
-.main-header h1 {
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    color: #ffffff;
-}
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="date">2. КОГДА</label>
+                    <select id="date" name="date" required>
+                        <option value="📅 Сегодня">Сегодня</option>
+                        <option value="📅 Завтра">Завтра</option>
+                    </select>
+                </div>
 
-.subtitle {
-    font-size: 13px;
-    color: #a1a1aa;
-    margin-top: 6px;
-}
+                <div class="form-group half">
+                    <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
+                    <input type="text" id="duration" name="duration" placeholder="Например: 4 часа / Смена" required>
+                </div>
+            </div>
 
-/* Формы и поля */
-.form-group {
-    margin-bottom: 24px;
-}
+            <div class="form-group">
+                <label for="username">4. ЗАКАЗЧИК</label>
+                <input type="text" id="username" name="username" placeholder="Ваше имя или ник в Telegram" required>
+            </div>
 
-.form-row {
-    display: flex;
-    gap: 16px;
-}
+            <div class="form-group">
+                <label for="comment">5. КОММЕНТАРИЙ И ТЗ</label>
+                <textarea id="comment" name="comment" placeholder="Подробно опишите задачу, локацию и нюансы работы..." required></textarea>
+            </div>
 
-/* На мобильных устройствах делим строки пополам, если они не влезают */
-@media (max-width: 480px) {
-    .form-row {
-        flex-direction: column;
-        gap: 0;
-    }
-}
+            <div class="form-group">
+                <label class="file-label">6. ПРИКРЕПИТЬ ФАЙЛ (ФОТО/ДОК)</label>
+                <div class="file-upload-zone">
+                    <input type="file" id="fileInput" name="fileInput" accept="image/*,application/pdf,.doc,.docx,.txt">
+                    <span class="file-custom-text">Выбрать файл на устройстве</span>
+                </div>
+                <div id="file-name-preview" class="file-preview-text"></div>
+            </div>
 
-.form-row .half {
-    flex: 1;
-}
+            <button type="submit" id="submitBtn">ОТПРАВИТЬ ЗАЯВКУ</button>
+            <div id="statusMessage" class="status-msg"></div>
 
-label, .group-title {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: #71717a;
-    margin-bottom: 8px;
-}
+        </form>
+    </main>
+</div>
 
-/* Кастомный выбор техники плитами */
-.tech-grid {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap; /* Чтобы плитки красиво переносились на узких экранах */
-}
-
-.tech-card {
-    flex: 1;
-    min-width: 120px;
-    cursor: pointer;
-}
-
-.tech-card input[type="radio"] {
-    display: none;
-}
-
-.card-content {
-    background-color: #1d1d22;
-    border: 1px solid #27272a;
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-}
-
-.card-content .icon {
-    font-size: 22px;
-}
-
-.card-content .title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #a1a1aa;
-}
-
-/* Эффект при выборе плитки */
-.tech-card input[type="radio"]:checked + .card-content {
-    background-color: #ffffff;
-    border-color: #ffffff;
-}
-
-.tech-card input[type="radio"]:checked + .card-content .title {
-    color: #0f0f11;
-}
-
-/* Поля ввода (Инпуты, Селекты) */
-select, input[type="text"], textarea {
-    width: 100%;
-    background-color: #1d1d22;
-    border: 1px solid #27272a;
-    color: #ffffff;
-    padding: 14px 16px;
-    border-radius: 8px;
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s ease;
-    -webkit-appearance: none; /* Убираем дефолтные стрелочки Safari */
-}
-
-select:focus, input[type="text"]:focus, textarea:focus {
-    border-color: #ffffff; /* При фокусе рамка становится белой в тон минимализма */
-}
-
-textarea {
-    height: 110px;
-    resize: none;
-}
-
-/* Зона загрузки файлов */
-.file-upload-zone {
-    position: relative;
-    border: 1px dashed #27272a;
-    background-color: #1d1d22;
-    padding: 16px;
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s ease;
-}
-
-.file-upload-zone:hover {
-    border-color: #52525b;
-}
-
-.file-upload-zone input[type="file"] {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.file-custom-text {
-    font-size: 13px;
-    color: #a1a1aa;
-}
-
-.file-preview-text {
-    font-size: 12px;
-    color: #2ecc71;
-    margin-top: 6px;
-    font-style: italic;
-}
-
-/* Кнопка отправки */
-button[type="submit"] {
-    width: 100%;
-    background-color: #ffffff;
-    color: #0f0f11;
-    border: none;
-    padding: 16px;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    margin-top: 10px;
-}
-
-button[type="submit"]:hover {
-    background-color: #e4e4e7;
-}
-
-button[type="submit"]:disabled {
-    background-color: #27272a;
-    color: #71717a;
-    cursor: not-allowed;
-}
-
-/* Статусы сообщений */
-.status-msg {
-    margin-top: 15px;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 600;
-}
-.status-msg.success { color: #2ecc71; }
-.status-msg.error { color: #e74c3c; }
+<script src="script.js"></script>
+</body>
+</html>
