@@ -13,7 +13,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 12px;
+    padding: 20px;
 }
 
 .app-container {
@@ -22,58 +22,73 @@ body {
     background-color: #16161a;
     border: 1px solid #27272a;
     border-radius: 12px;
-    padding: 30px 20px;
+    padding: 40px 30px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* Шапка сайта */
 .main-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 35px;
     border-bottom: 1px solid #27272a;
     padding-bottom: 20px;
 }
 
 .main-header h1 {
-    font-size: clamp(18px, 5vw, 24px);
+    font-size: 24px;
     font-weight: 800;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     color: #ffffff;
-    margin-bottom: 8px;
 }
 
 .subtitle {
-    font-size: clamp(11px, 2.5vw, 13px);
+    font-size: 13px;
     color: #a1a1aa;
-    line-height: 1.4;
+    margin-top: 6px;
 }
 
 /* Формы и поля */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+/* На мобильных устройствах делим строки пополам, если они не влезают */
+@media (max-width: 480px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+.form-row .half {
+    flex: 1;
 }
 
 label, .group-title {
     display: block;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
     color: #71717a;
     margin-bottom: 8px;
-    text-transform: uppercase;
 }
 
-/* ===== ТЕХНИКА (3 ИКОНКИ В РЯД) ===== */
+/* Кастомный выбор техники плитами */
 .tech-grid {
     display: flex;
-    gap: 10px;
-    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap; /* Чтобы плитки красиво переносились на узких экранах */
 }
 
 .tech-card {
     flex: 1;
+    min-width: 120px;
     cursor: pointer;
-    min-width: 0;
 }
 
 .tech-card input[type="radio"] {
@@ -84,133 +99,55 @@ label, .group-title {
     background-color: #1d1d22;
     border: 1px solid #27272a;
     border-radius: 8px;
-    padding: 14px 10px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     transition: all 0.2s ease;
-    user-select: none;
 }
 
 .card-content .icon {
-    font-size: clamp(18px, 4vw, 22px);
+    font-size: 22px;
 }
 
 .card-content .title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: #a1a1aa;
-    text-align: center;
-    line-height: 1.3;
 }
 
 /* Эффект при выборе плитки */
 .tech-card input[type="radio"]:checked + .card-content {
     background-color: #ffffff;
     border-color: #ffffff;
-    transform: scale(1.02);
 }
 
 .tech-card input[type="radio"]:checked + .card-content .title {
     color: #0f0f11;
 }
 
-/* ===== ДАТА И ПОЛОВИНА ДНЯ ===== */
-.date-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-input[type="date"] {
+/* Поля ввода (Инпуты, Селекты) */
+select, input[type="text"], textarea {
     width: 100%;
     background-color: #1d1d22;
     border: 1px solid #27272a;
     color: #ffffff;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border-radius: 8px;
     font-size: 15px;
     outline: none;
     transition: border-color 0.2s ease;
-    -webkit-appearance: none;
-    appearance: none;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23a1a1aa" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 20px;
-    padding-right: 40px;
+    -webkit-appearance: none; /* Убираем дефолтные стрелочки Safari */
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0;
-}
-
-input[type="date"]:focus {
-    border-color: #52525b;
-}
-
-/* Половины дня */
-.day-half-selector {
-    display: flex;
-    gap: 10px;
-}
-
-.half-option {
-    flex: 1;
-    cursor: pointer;
-    position: relative;
-}
-
-.half-option input[type="radio"] {
-    display: none;
-}
-
-.half-label {
-    display: block;
-    background-color: #1d1d22;
-    border: 1px solid #27272a;
-    padding: 10px 12px;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 500;
-    color: #a1a1aa;
-    transition: all 0.2s ease;
-    user-select: none;
-}
-
-.half-option input[type="radio"]:checked + .half-label {
-    background-color: #ffffff;
-    border-color: #ffffff;
-    color: #0f0f11;
-    font-weight: 600;
-}
-
-/* ===== ОСТАЛЬНЫЕ ПОЛЯ ===== */
-input[type="text"], textarea {
-    width: 100%;
-    background-color: #1d1d22;
-    border: 1px solid #27272a;
-    color: #ffffff;
-    padding: 12px 14px;
-    border-radius: 8px;
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s ease;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-input[type="text"]:focus, textarea:focus {
-    border-color: #52525b;
+select:focus, input[type="text"]:focus, textarea:focus {
+    border-color: #ffffff; /* При фокусе рамка становится белой в тон минимализма */
 }
 
 textarea {
-    height: 100px;
+    height: 110px;
     resize: none;
-    font-family: inherit;
 }
 
 /* Зона загрузки файлов */
@@ -218,7 +155,7 @@ textarea {
     position: relative;
     border: 1px dashed #27272a;
     background-color: #1d1d22;
-    padding: 16px 14px;
+    padding: 16px;
     border-radius: 8px;
     text-align: center;
     cursor: pointer;
@@ -242,7 +179,6 @@ textarea {
 .file-custom-text {
     font-size: 13px;
     color: #a1a1aa;
-    display: block;
 }
 
 .file-preview-text {
@@ -250,7 +186,6 @@ textarea {
     color: #2ecc71;
     margin-top: 6px;
     font-style: italic;
-    word-break: break-word;
 }
 
 /* Кнопка отправки */
@@ -259,175 +194,32 @@ button[type="submit"] {
     background-color: #ffffff;
     color: #0f0f11;
     border: none;
-    padding: 14px 16px;
+    padding: 16px;
     font-size: 15px;
     font-weight: 700;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    margin-top: 8px;
-    text-transform: uppercase;
-    -webkit-appearance: none;
-    appearance: none;
+    margin-top: 10px;
 }
 
 button[type="submit"]:hover {
     background-color: #e4e4e7;
 }
 
-button[type="submit"]:active {
-    transform: scale(0.98);
-}
-
 button[type="submit"]:disabled {
     background-color: #27272a;
     color: #71717a;
     cursor: not-allowed;
-    opacity: 0.6;
 }
 
 /* Статусы сообщений */
 .status-msg {
-    margin-top: 12px;
+    margin-top: 15px;
     text-align: center;
     font-size: 14px;
     font-weight: 600;
-    padding: 8px 12px;
-    border-radius: 6px;
-    min-height: 20px;
-    animation: fadeIn 0.3s ease;
 }
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.status-msg.success { 
-    color: #2ecc71;
-    background-color: rgba(46, 204, 113, 0.1);
-}
-
-.status-msg.error { 
-    color: #e74c3c;
-    background-color: rgba(231, 76, 60, 0.1);
-}
-
-/* Мобильная оптимизация */
-@media (max-width: 480px) {
-    body {
-        padding: 8px;
-        align-items: flex-start;
-        min-height: auto;
-        padding-top: 12px;
-        padding-bottom: 20px;
-    }
-
-    .app-container {
-        border-radius: 10px;
-        padding: 20px 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    .main-header {
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-    }
-
-    .main-header h1 {
-        font-size: 18px;
-        letter-spacing: 1px;
-    }
-
-    .subtitle {
-        font-size: 11px;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    label, .group-title {
-        margin-bottom: 6px;
-        font-size: 10px;
-    }
-
-    .tech-grid {
-        gap: 8px;
-    }
-
-    .card-content {
-        padding: 12px 8px;
-        gap: 4px;
-    }
-
-    .card-content .icon {
-        font-size: 18px;
-    }
-
-    .card-content .title {
-        font-size: 11px;
-    }
-
-    .date-section {
-        gap: 10px;
-    }
-
-    input[type="date"],
-    input[type="text"],
-    textarea {
-        padding: 11px 12px;
-        font-size: 16px;
-    }
-
-    .day-half-selector {
-        gap: 8px;
-    }
-
-    .half-label {
-        padding: 9px 10px;
-        font-size: 12px;
-    }
-
-    textarea {
-        height: 90px;
-    }
-
-    .file-upload-zone {
-        padding: 14px 12px;
-    }
-
-    .file-custom-text {
-        font-size: 12px;
-    }
-
-    button[type="submit"] {
-        padding: 13px 14px;
-        font-size: 14px;
-        margin-top: 6px;
-    }
-
-    .status-msg {
-        font-size: 13px;
-        padding: 6px 10px;
-    }
-}
-
-/* Планшеты */
-@media (min-width: 481px) and (max-width: 768px) {
-    .app-container {
-        max-width: 500px;
-        padding: 32px 24px;
-    }
-
-    .form-group {
-        margin-bottom: 22px;
-    }
-}
+.status-msg.success { color: #2ecc71; }
+.status-msg.error { color: #e74c3c; }
