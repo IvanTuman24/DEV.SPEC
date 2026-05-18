@@ -49,21 +49,18 @@
             <div class="form-row">
                 <div class="form-group half">
                     <label for="date">2. КОГДА</label>
-                    <select id="date" name="date" required>
-                        <option value="📅 Сегодня">Сегодня</option>
-                        <option value="📅 Завтра">Завтра</option>
-                    </select>
+                    <input type="date" id="date" name="date" required>
                 </div>
 
                 <div class="form-group half">
                     <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
-                    <input type="text" id="duration" name="duration" placeholder="Например: 4 часа / Смена" required>
+                    <input type="text" id="duration" name="duration" placeholder="4 часа / Смена" required>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="username">4. ЗАКАЗЧИК</label>
-                <input type="text" id="username" name="username" placeholder="Ваше имя или ник в Telegram" required>
+                <input type="text" id="username" name="username" placeholder="Имя или ник в Telegram" required>
             </div>
 
             <div class="form-group">
