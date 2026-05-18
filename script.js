@@ -1,7 +1,7 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// --- УПРАВЛЕНИЕ КАЛЕНДАРЕМ (ДЕФОЛТНОЕ СЕГОДНЯ + БЛОК ПРОШЛОГО) ---
+// --- УПРАВЛЕНИЕ КАЛЕНДАРЕМ ---
 document.addEventListener("DOMContentLoaded", function() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
@@ -14,13 +14,12 @@ document.addEventListener("DOMContentLoaded", function() {
         if (mm < 10) mm = '0' + mm;
 
         const formattedToday = `${yyyy}-${mm}-${dd}`;
-        
         dateInput.value = formattedToday; 
         dateInput.min = formattedToday;   
     }
 });
 
-// --- ЛОГИКА ВЫБОРА ЗАКАЗЧИКА ("ИНАЧЕ") ---
+// --- ЛОГИКА ВЫБОРА ЗАКАЗЧИКА ---
 const usernameSelect = document.getElementById('usernameSelect');
 const customUsernameInput = document.getElementById('customUsername');
 
@@ -31,7 +30,7 @@ usernameSelect.addEventListener('change', function() {
     } else {
         customUsernameInput.style.display = 'none';
         customUsernameInput.required = false;
-        customUsernameInput.value = ''; // Сброс ручного ввода
+        customUsernameInput.value = '';
     }
 });
 
@@ -62,7 +61,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     const comment = document.getElementById('comment').value;
     const fileInput = document.getElementById('fileInput');
 
-    // Определяем итоговое имя заказчика
     let finalUsername = usernameSelect.value;
     if (finalUsername === 'Иначе') {
         finalUsername = customUsernameInput.value.trim();
@@ -70,59 +68,81 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
     const formattedDate = rawDate.split('-').reverse().join('.');
 
-    const messageText = 
-`📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
-━━━━━━━━━━━━━━━
-⚙️ **Техника:** ${tech}
-📅 **Когда:** ${formattedDate}
-⏳ **На сколько:** ${duration}
-👤 **Заказчик:** ${finalUsername}
-━━━━━━━━━━━━━━━
-📝 **Задача и ТЗ:**
-${comment}`;
+    // Экранируем текст под HTML, чтобы бот не падал от символов < и >
+    const safeComment = comment.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const safeUsername = finalUsername.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // Пересобрали карточку на HTML-разметку (она не виснет из-за спецсимволов)
+    const messageHtml = 
+`<b>📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ</b>\n` +
+`━━━━━━━━━━━━━━━\n` +
+`⚙️ <b>Техника:</b> ${tech}\n` +
+`📅 <b>Когда:</b> ${formattedDate}\n` +
+`⏳ <b>На сколько:</b> ${duration}\n` +
+`👤 <b>Заказчик:</b> ${safeUsername}\n` +
+`━━━━━━━━━━━━━━━\n` +
+`📝 <b>Задача и ТЗ:</b>\n` +
+`${safeComment}`;
 
     try {
+        let response;
+        
+        // Настройка таймаута, чтобы отправка не "висела" вечно, если сеть лежит
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 секунд на ответ
+
         if (fileInput.files.length > 0) {
             const formData = new FormData();
             formData.append('chat_id', ADMIN_ID);
             formData.append('document', fileInput.files[0]);
-            formData.append('caption', messageText);
-            formData.append('parse_mode', 'Markdown');
+            formData.append('caption', messageHtml);
+            formData.append('parse_mode', 'HTML');
 
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                signal: controller.signal
             });
-
-            if (!response.ok) throw new Error('Ошибка отправки файла');
-
         } else {
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: ADMIN_ID,
-                    text: messageText,
-                    parse_mode: 'Markdown'
-                })
+                    text: messageHtml,
+                    parse_mode: 'HTML'
+                }),
+                signal: controller.signal
             });
-
-            if (!response.ok) throw new Error('Ошибка отправки текста');
         }
 
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Telegram API Error:', errorData);
+            throw new Error(`API вернул ошибку: ${errorData.description}`);
+        }
+
+        // УСПЕХ
         statusMsg.className = "status-msg success";
         statusMsg.textContent = "✅ Заявка успешно доставлена постановщику задач!";
         document.getElementById('orderForm').reset();
         document.getElementById('file-name-preview').textContent = '';
-        customUsernameInput.style.display = 'none'; // Прячем инпут после сброса формы
+        customUsernameInput.style.display = 'none';
         
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
 
     } catch (error) {
-        console.error(error);
+        console.error('Network/Parsing Error:', error);
         statusMsg.className = "status-msg error";
-        statusMsg.textContent = "❌ Ошибка сети. Не удалось передать данные.";
+        
+        if (error.name === 'AbortError') {
+            statusMsg.textContent = "❌ Превышено время ожидания. Проверьте VPN/подключение.";
+        } else {
+            statusMsg.textContent = "❌ Ошибка отправки. Бот не запущен или заблокирован.";
+        }
     } finally {
         submitBtn.disabled = false;
     }
