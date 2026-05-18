@@ -42,6 +42,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     // Сбор полей
     const tech = document.querySelector('input[name="tech"]:checked').value;
     const dateValue = document.getElementById('date').value;
+    const dayHalf = document.querySelector('input[name="dayHalf"]:checked').value;
     const duration = document.getElementById('duration').value;
     const username = document.getElementById('username').value;
     const comment = document.getElementById('comment').value;
@@ -55,7 +56,8 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
 ━━━━━━━━━━━━━━━
 ⚙️ **Техника:** ${tech}
-📅 **Когда:** ${formattedDate}
+📅 **Дата:** ${formattedDate}
+🕐 **Время дня:** ${dayHalf}
 ⏳ **На сколько:** ${duration}
 👤 **Заказчик:** ${username}
 ━━━━━━━━━━━━━━━

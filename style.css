@@ -53,16 +53,6 @@ body {
     margin-bottom: 20px;
 }
 
-.form-row {
-    display: flex;
-    gap: 12px;
-}
-
-.form-row .half {
-    flex: 1;
-    min-width: 0;
-}
-
 label, .group-title {
     display: block;
     font-size: 11px;
@@ -73,17 +63,17 @@ label, .group-title {
     text-transform: uppercase;
 }
 
-/* Кастомный выбор техники плитами */
+/* ===== ТЕХНИКА (3 ИКОНКИ В РЯД) ===== */
 .tech-grid {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .tech-card {
     flex: 1;
-    min-width: calc(33.333% - 8px);
     cursor: pointer;
+    min-width: 0;
 }
 
 .tech-card input[type="radio"] {
@@ -126,8 +116,80 @@ label, .group-title {
     color: #0f0f11;
 }
 
-/* Поля ввода (Инпуты, Селекты, Дата) */
-select, input[type="text"], input[type="date"], textarea {
+/* ===== ДАТА И ПОЛОВИНА ДНЯ ===== */
+.date-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+input[type="date"] {
+    width: 100%;
+    background-color: #1d1d22;
+    border: 1px solid #27272a;
+    color: #ffffff;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23a1a1aa" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 20px;
+    padding-right: 40px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0;
+}
+
+input[type="date"]:focus {
+    border-color: #52525b;
+}
+
+/* Половины дня */
+.day-half-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.half-option {
+    flex: 1;
+    cursor: pointer;
+    position: relative;
+}
+
+.half-option input[type="radio"] {
+    display: none;
+}
+
+.half-label {
+    display: block;
+    background-color: #1d1d22;
+    border: 1px solid #27272a;
+    padding: 10px 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #a1a1aa;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.half-option input[type="radio"]:checked + .half-label {
+    background-color: #ffffff;
+    border-color: #ffffff;
+    color: #0f0f11;
+    font-weight: 600;
+}
+
+/* ===== ОСТАЛЬНЫЕ ПОЛЯ ===== */
+input[type="text"], textarea {
     width: 100%;
     background-color: #1d1d22;
     border: 1px solid #27272a;
@@ -141,23 +203,8 @@ select, input[type="text"], input[type="date"], textarea {
     appearance: none;
 }
 
-/* Стили для календаря (input[type="date"]) */
-input[type="date"] {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23a1a1aa" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 20px;
-    padding-right: 40px;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0;
-}
-
-select:focus, input[type="text"]:focus, input[type="date"]:focus, textarea:focus {
+input[type="text"]:focus, textarea:focus {
     border-color: #52525b;
-    background-color: #1d1d22;
 }
 
 textarea {
@@ -307,14 +354,6 @@ button[type="submit"]:disabled {
         margin-bottom: 18px;
     }
 
-    .form-row {
-        gap: 10px;
-    }
-
-    .form-row .half {
-        min-width: 0;
-    }
-
     label, .group-title {
         margin-bottom: 6px;
         font-size: 10px;
@@ -322,10 +361,6 @@ button[type="submit"]:disabled {
 
     .tech-grid {
         gap: 8px;
-    }
-
-    .tech-card {
-        min-width: calc(33.333% - 6px);
     }
 
     .card-content {
@@ -341,9 +376,24 @@ button[type="submit"]:disabled {
         font-size: 11px;
     }
 
-    select, input[type="text"], input[type="date"], textarea {
+    .date-section {
+        gap: 10px;
+    }
+
+    input[type="date"],
+    input[type="text"],
+    textarea {
         padding: 11px 12px;
         font-size: 16px;
+    }
+
+    .day-half-selector {
+        gap: 8px;
+    }
+
+    .half-label {
+        padding: 9px 10px;
+        font-size: 12px;
     }
 
     textarea {
