@@ -117,3 +117,22 @@ ${comment}`;
         submitBtn.disabled = false;
     }
 });
+// --- ЛОГИКА СМЕНЫ ДНЕВНОГО / НОЧНОГО РЕЖИМА ---
+const themeToggle = document.getElementById('theme-toggle');
+
+// Проверяем, была ли сохранена светлая тема ранее
+if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-theme');
+    themeToggle.checked = true;
+}
+
+// Слушаем клик по слайдеру
+themeToggle.addEventListener('change', function() {
+    if (this.checked) {
+        document.body.classList.add('light-theme');
+        localStorage.setItem('theme', 'light'); // Запоминаем выбор
+    } else {
+        document.body.classList.remove('light-theme');
+        localStorage.setItem('theme', 'dark');  // Запоминаем выбор
+    }
+});
