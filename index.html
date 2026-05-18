@@ -59,8 +59,20 @@
             </div>
 
             <div class="form-group">
-                <label for="username">4. ЗАКАЗЧИК</label>
-                <input type="text" id="username" name="username" placeholder="Ваше имя или ник в Telegram" required>
+                <label for="usernameSelect">4. ЗАКАЗЧИК</label>
+                <select id="usernameSelect" required>
+                    <option value="" disabled selected>Выберите из списка...</option>
+                    <option value="Женя Борода">Женя Борода</option>
+                    <option value="Влад">Влад</option>
+                    <option value="Ник">Ник</option>
+                    <option value="Никита">Никита</option>
+                    <option value="Алёна Грибова">Алёна Грибова</option>
+                    <option value="НасяYou">НасяYou</option>
+                    <option value="Натали">Натали</option>
+                    <option value="Иначе">Иначе...</option>
+                </select>
+                
+                <input type="text" id="customUsername" class="hidden-input" placeholder="Введите ваше имя или ник вручную">
             </div>
 
             <div class="form-group">
