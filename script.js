@@ -15,8 +15,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const formattedToday = `${yyyy}-${mm}-${dd}`;
         
-        dateInput.value = formattedToday; // Ставим сегодняшнее число
-        dateInput.min = formattedToday;   // Запрещаем выбирать вчера и ранее
+        dateInput.value = formattedToday; 
+        dateInput.min = formattedToday;   
+    }
+});
+
+// --- ЛОГИКА ВЫБОРА ЗАКАЗЧИКА ("ИНАЧЕ") ---
+const usernameSelect = document.getElementById('usernameSelect');
+const customUsernameInput = document.getElementById('customUsername');
+
+usernameSelect.addEventListener('change', function() {
+    if (this.value === 'Иначе') {
+        customUsernameInput.style.display = 'block';
+        customUsernameInput.required = true;
+    } else {
+        customUsernameInput.style.display = 'none';
+        customUsernameInput.required = false;
+        customUsernameInput.value = ''; // Сброс ручного ввода
     }
 });
 
@@ -44,11 +59,15 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     const tech = document.querySelector('input[name="tech"]:checked').value;
     const rawDate = document.getElementById('date').value;
     const duration = document.getElementById('duration').value;
-    const username = document.getElementById('username').value;
     const comment = document.getElementById('comment').value;
     const fileInput = document.getElementById('fileInput');
 
-    // Переводим дату из YYYY-MM-DD в человеческий вид DD.MM.YYYY
+    // Определяем итоговое имя заказчика
+    let finalUsername = usernameSelect.value;
+    if (finalUsername === 'Иначе') {
+        finalUsername = customUsernameInput.value.trim();
+    }
+
     const formattedDate = rawDate.split('-').reverse().join('.');
 
     const messageText = 
@@ -57,7 +76,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 ⚙️ **Техника:** ${tech}
 📅 **Когда:** ${formattedDate}
 ⏳ **На сколько:** ${duration}
-👤 **Заказчик:** ${username}
+👤 **Заказчик:** ${finalUsername}
 ━━━━━━━━━━━━━━━
 📝 **Задача и ТЗ:**
 ${comment}`;
@@ -95,8 +114,8 @@ ${comment}`;
         statusMsg.textContent = "✅ Заявка успешно доставлена постановщику задач!";
         document.getElementById('orderForm').reset();
         document.getElementById('file-name-preview').textContent = '';
+        customUsernameInput.style.display = 'none'; // Прячем инпут после сброса формы
         
-        // Переинициализируем сегодняшнюю дату после сброса формы
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
 
