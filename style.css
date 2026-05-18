@@ -1,100 +1,263 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Заказ техники — Минимализм</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+/* Переменные для быстрой смены цвета (По умолчанию - ТЕМНАЯ) */
+:root {
+    --bg-color: #0f0f11;
+    --container-bg: #16161a;
+    --border-color: #27272a;
+    --text-main: #e4e4e7;
+    --text-muted: #71717a;
+    --text-input-label: #a1a1aa;
+    --input-bg: #1d1d22;
+    --btn-bg: #ffffff;
+    --btn-text: #0f0f11;
+    --btn-hover: #e4e4e7;
+    --focus-border: #ffffff;
+}
 
-<div class="theme-switch-wrapper">
-    <span class="theme-label">LIGHT</span>
-    <label class="theme-switch">
-        <input type="checkbox" id="theme-toggle">
-        <div class="slider"></div>
-    </label>
-</div>
+/* Переменные для СВЕТЛОЙ темы */
+body.light-theme {
+    --bg-color: #f4f4f7;
+    --container-bg: #ffffff;
+    --border-color: #d4d4d8;
+    --text-main: #18181b;
+    --text-muted: #a1a1aa;
+    --text-input-label: #3f3f46;
+    --input-bg: #f4f4f5;
+    --btn-bg: #18181b;
+    --btn-text: #ffffff;
+    --btn-hover: #27272a;
+    --focus-border: #18181b;
+}
 
-<div class="app-container">
-    <header class="main-header">
-        <h1>ЗАКАЗ ТЕХНИКИ</h1>
-        <p class="subtitle">Формирование технического задания для исполнителей</p>
-    </header>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
-    <main class="form-wrapper">
-        <form id="orderForm">
-            
-            <div class="form-group">
-                <label class="group-title">1. ТЕХНИКА</label>
-                <div class="tech-grid">
-                    <label class="tech-card">
-                        <input type="radio" name="tech" value="🚜 Трактор" checked>
-                        <div class="card-content">
-                            <span class="icon">🚜</span>
-                            <span class="title">Трактор</span>
-                        </div>
-                    </label>
-                    
-                    <label class="tech-card">
-                        <input type="radio" name="tech" value="🏗 Манипулятор">
-                        <div class="card-content">
-                            <span class="icon">🏗</span>
-                            <span class="title">Манипулятор</span>
-                        </div>
-                    </label>
-                    
-                    <label class="tech-card">
-                        <input type="radio" name="tech" value="🛠 Мейкер">
-                        <div class="card-content">
-                            <span class="icon">🛠</span>
-                            <span class="title">Мейкер</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
 
-            <div class="form-row">
-                <div class="form-group half">
-                    <label for="date">2. КОГДА</label>
-                    <select id="date" name="date" required>
-                        <option value="📅 Сегодня">Сегодня</option>
-                        <option value="📅 Завтра">Завтра</option>
-                    </select>
-                </div>
+/* Позиционирование слайдера в правом верхнем углу */
+.theme-switch-wrapper {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+}
 
-                <div class="form-group half">
-                    <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
-                    <input type="text" id="duration" name="duration" placeholder="Например: 4 часа / Смена" required>
-                </div>
-            </div>
+.theme-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
 
-            <div class="form-group">
-                <label for="username">4. ЗАКАЗЧИК</label>
-                <input type="text" id="username" name="username" placeholder="Ваше имя или ник в Telegram" required>
-            </div>
+/* Конструкция слайдера */
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 22px;
+    cursor: pointer;
+}
 
-            <div class="form-group">
-                <label for="comment">5. КОММЕНТАРИЙ И ТЗ</label>
-                <textarea id="comment" name="comment" placeholder="Подробно опишите задачу, локацию и нюансы работы..." required></textarea>
-            </div>
+.theme-switch input {
+    display: none;
+}
 
-            <div class="form-group">
-                <label class="file-label">6. ПРИКРЕПИТЬ ФАЙЛ (ФОТО/ДОК)</label>
-                <div class="file-upload-zone">
-                    <input type="file" id="fileInput" name="fileInput" accept="image/*,application/pdf,.doc,.docx,.txt">
-                    <span class="file-custom-text">Выбрать файл на устройстве</span>
-                </div>
-                <div id="file-name-preview" class="file-preview-text"></div>
-            </div>
+.slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #1d1d22;
+    border: 1px solid var(--border-color);
+    border-radius: 34px;
+    transition: 0.3s;
+}
 
-            <button type="submit" id="submitBtn">ОТПРАВИТЬ ЗАЯВКУ</button>
-            <div id="statusMessage" class="status-msg"></div>
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #71717a;
+    border-radius: 50%;
+    transition: 0.3s;
+}
 
-        </form>
-    </main>
-</div>
+/* Анимация движения ползунка */
+input:checked + .slider {
+    background-color: #ffffff;
+}
 
-<script src="script.js"></script>
-</body>
-</html>
+body.light-theme input:checked + .slider {
+    background-color: #18181b;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+    background-color: var(--container-bg);
+}
+
+/* Основной контейнер */
+.app-container {
+    width: 100%;
+    max-width: 550px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 40px 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.main-header {
+    text-align: center;
+    margin-bottom: 35px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.main-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--text-main);
+}
+
+.subtitle {
+    font-size: 13px;
+    color: var(--text-input-label);
+    margin-top: 6px;
+}
+
+.form-group { margin-bottom: 24px; }
+.form-row { display: flex; gap: 16px; }
+
+@media (max-width: 480px) {
+    .form-row { flex-direction: column; gap: 0; }
+}
+
+.form-row .half { flex: 1; }
+
+label, .group-title {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+/* Сетка выбора техники плитами */
+.tech-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+.tech-card { flex: 1; min-width: 120px; cursor: pointer; }
+.tech-card input[type="radio"] { display: none; }
+
+.card-content {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.card-content .icon { font-size: 22px; }
+.card-content .title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-input-label);
+}
+
+/* Логика активных плит для разных тем */
+.tech-card input[type="radio"]:checked + .card-content {
+    background-color: var(--btn-bg);
+    border-color: var(--btn-bg);
+}
+
+.tech-card input[type="radio"]:checked + .card-content .title {
+    color: var(--btn-text);
+}
+
+/* Поля ввода */
+select, input[type="text"], textarea {
+    width: 100%;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.3s ease;
+}
+
+select:focus, input[type="text"]:focus, textarea:focus {
+    border-color: var(--focus-border);
+}
+
+textarea { height: 110px; resize: none; }
+
+/* Загрузка документов */
+.file-upload-zone {
+    position: relative;
+    border: 1px dashed var(--border-color);
+    background-color: var(--input-bg);
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.file-upload-zone input[type="file"] {
+    position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;
+}
+
+.file-custom-text { font-size: 13px; color: var(--text-input-label); }
+.file-preview-text { font-size: 12px; color: #2ecc71; margin-top: 6px; font-style: italic; }
+
+/* Главная кнопка */
+button[type="submit"] {
+    width: 100%;
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+button[type="submit"]:hover { background-color: var(--btn-hover); }
+
+button[type="submit"]:disabled {
+    background-color: var(--border-color);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.status-msg { margin-top: 15px; text-align: center; font-size: 14px; font-weight: 600; }
+.status-msg.success { color: #2ecc71; }
+.status-msg.error { color: #e74c3c; }
