@@ -1,0 +1,209 @@
+/* Базовые сбросы и шрифты */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #0f0f11;
+    color: #e4e4e7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 550px;
+    background-color: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 40px 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Шапка сайта */
+.main-header {
+    text-align: center;
+    margin-bottom: 35px;
+    border-bottom: 1px solid #27272a;
+    padding-bottom: 20px;
+}
+
+.main-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #ffffff;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: #a1a1aa;
+    margin-top: 6px;
+}
+
+/* Формы и поля */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row .half {
+    flex: 1;
+}
+
+label, .group-title {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #71717a;
+    margin-bottom: 8px;
+}
+
+/* Кастомный выбор техники плитами */
+.tech-grid {
+    display: flex;
+    gap: 12px;
+}
+
+.tech-card {
+    flex: 1;
+    cursor: pointer;
+}
+
+.tech-card input[type="radio"] {
+    display: none;
+}
+
+.card-content {
+    background-color: #1d1d22;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.card-content .icon {
+    font-size: 22px;
+}
+
+.card-content .title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a1a1aa;
+}
+
+/* Эффект при выборе плитки */
+.tech-card input[type="radio"]:checked + .card-content {
+    background-color: #ffffff;
+    border-color: #ffffff;
+}
+
+.tech-card input[type="radio"]:checked + .card-content .title {
+    color: #0f0f11;
+}
+
+/* Поля ввода (Инпуты, Селекты) */
+select, input[type="text"], textarea {
+    width: 100%;
+    background-color: #1d1d22;
+    border: 1px solid #27272a;
+    color: #ffffff;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+select:focus, input[type="text"]:focus, textarea:focus {
+    border-color: #52525b;
+}
+
+textarea {
+    height: 110px;
+    resize: none;
+}
+
+/* Зона загрузки файлов */
+.file-upload-zone {
+    position: relative;
+    border: 1px dashed #27272a;
+    background-color: #1d1d22;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.file-upload-zone input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-custom-text {
+    font-size: 13px;
+    color: #a1a1aa;
+}
+
+.file-preview-text {
+    font-size: 12px;
+    color: #2ecc71;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* Кнопка отправки */
+button[type="submit"] {
+    width: 100%;
+    background-color: #ffffff;
+    color: #0f0f11;
+    border: none;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+button[type="submit"]:hover {
+    background-color: #e4e4e7;
+}
+
+button[type="submit"]:disabled {
+    background-color: #27272a;
+    color: #71717a;
+    cursor: not-allowed;
+}
+
+/* Статусы сообщений */
+.status-msg {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+.status-msg.success { color: #2ecc71; }
+.status-msg.error { color: #e74c3c; }

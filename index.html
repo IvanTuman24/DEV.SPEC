@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ техники — Минимализм</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+    <header class="main-header">
+        <h1>ЗАКАЗ ТЕХНИКИ</h1>
+        <p class="subtitle">Формирование технического задания для исполнителей</p>
+    </header>
+
+    <main class="form-wrapper">
+        <form id="orderForm">
+            
+            <div class="form-group">
+                <label class="group-title">1. ТЕХНИКА</label>
+                <div class="tech-grid">
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🚜 Трактор" checked>
+                        <div class="card-content">
+                            <span class="icon">🚜</span>
+                            <span class="title">Трактор</span>
+                        </div>
+                    </label>
+                    
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🏗 Манипулятор">
+                        <div class="card-content">
+                            <span class="icon">🏗</span>
+                            <span class="title">Манипулятор</span>
+                        </div>
+                    </label>
+                    
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🛠 Мейкер">
+                        <div class="card-content">
+                            <span class="icon">🛠</span>
+                            <span class="title">Мейкер</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="date">2. КОГДА</label>
+                    <select id="date" name="date" required>
+                        <option value="📅 Сегодня">Сегодня</option>
+                        <option value="📅 Завтра">Завтра</option>
+                    </select>
+                </div>
+
+                <div class="form-group half">
+                    <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
+                    <input type="text" id="duration" name="duration" placeholder="Например: 4 часа / Смена" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="username">4. ЗАКАЗЧИК</label>
+                <input type="text" id="username" name="username" placeholder="Ваше имя или ник в Telegram" required>
+            </div>
+
+            <div class="form-group">
+                <label for="comment">5. КОММЕНТАРИЙ И ТЗ</label>
+                <textarea id="comment" name="comment" placeholder="Подробно опишите задачу, локацию и нюансы работы..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="file-label">6. ПРИКРЕПИТЬ ФАЙЛ (ФОТО/ДОК)</label>
+                <div class="file-upload-zone">
+                    <input type="file" id="fileInput" name="fileInput" accept="image/*,application/pdf,.doc,.docx,.txt">
+                    <span class="file-custom-text">Выбрать файл на устройстве</span>
+                </div>
+                <div id="file-name-preview" class="file-preview-text"></div>
+            </div>
+
+            <button type="submit" id="submitBtn">ОТПРАВИТЬ ЗАЯВКУ</button>
+            <div id="statusMessage" class="status-msg"></div>
+
+        </form>
+    </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
