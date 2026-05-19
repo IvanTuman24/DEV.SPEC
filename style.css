@@ -1,9 +1,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
 body { background-color: #0f0f11; color: #e4e4e7; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-.app-container { width: 100%; max-width: 600px; background-color: #16161a; border: 1px solid #27272a; border-radius: 12px; padding: 40px 30px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); }
+.app-container { width: 100%; max-width: 550px; background-color: #16161a; border: 1px solid #27272a; border-radius: 12px; padding: 40px 30px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); }
 .main-header { text-align: center; margin-bottom: 35px; border-bottom: 1px solid #27272a; padding-bottom: 20px; }
-.main-header h1 { font-size: 26px; font-weight: 800; letter-spacing: 3px; color: #ffffff; }
-.subtitle { font-size: 12px; color: #71717a; margin-top: 6px; }
+.main-header h1 { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #ffffff; }
+.subtitle { font-size: 11px; color: #71717a; margin-top: 6px; letter-spacing: 0.5px; }
 .form-group { margin-bottom: 24px; }
 .form-row { display: flex; gap: 16px; }
 @media (max-width: 480px) { .form-row { flex-direction: column; gap: 0; } }
@@ -19,13 +19,13 @@ label, .group-title { display: block; font-size: 11px; font-weight: 700; letter-
 .card-content .title { font-size: 13px; font-weight: 600; color: #a1a1aa; }
 select, input[type="text"], input[type="date"], textarea { width: 100%; background-color: #1d1d22; border: 1px solid #27272a; color: #ffffff; padding: 14px 16px; border-radius: 8px; font-size: 15px; outline: none; }
 select:focus, input[type="text"]:focus, input[type="date"]:focus, textarea:focus { border-color: #ffffff; }
-textarea { height: 100px; resize: none; }
+textarea { height: 110px; resize: none; }
 .hidden-input { display: none; margin-top: 12px; }
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.6; }
 .file-upload-zone { position: relative; border: 1px dashed #27272a; background-color: #1d1d22; padding: 16px; border-radius: 8px; text-align: center; }
 .file-upload-zone input[type="file"] { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
 .file-custom-text { font-size: 13px; color: #a1a1aa; }
-.file-preview-text { font-size: 12px; color: #2ecc71; margin-top: 6px; }
+.file-preview-text { font-size: 12px; color: #2ecc71; margin-top: 6px; font-style: italic; }
 button[type="submit"] { width: 100%; background-color: #ffffff; color: #0f0f11; border: none; padding: 16px; font-size: 15px; font-weight: 700; border-radius: 8px; cursor: pointer; margin-top: 10px; }
 button[type="submit"]:hover { background-color: #e4e4e7; }
 button[type="submit"]:disabled { background-color: #27272a; color: #71717a; cursor: not-allowed; }
@@ -33,22 +33,18 @@ button[type="submit"]:disabled { background-color: #27272a; color: #71717a; curs
 .status-msg.success { color: #2ecc71; }
 .status-msg.error { color: #e74c3c; }
 
-.divider { height: 1px; background-color: #27272a; margin: 40px 0; }
-
-/* СТИЛИ КАЛЕНДАРЯ ЗАДАЧ */
+/* КНОПКИ И КАРТОЧКИ ДЛЯ СТРАНИЦЫ АДМИНКИ */
 .admin-section { display: flex; flex-direction: column; gap: 20px; }
-.admin-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-.admin-header h2 { font-size: 14px; font-weight: 800; letter-spacing: 2px; color: #ffffff; }
-.filter-buttons { display: flex; gap: 6px; background: #1d1d22; padding: 4px; border-radius: 8px; border: 1px solid #27272a; }
-.filter-btn { background: transparent; border: none; color: #71717a; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.admin-header { display: flex; justify-content: center; margin-bottom: 10px; }
+.filter-buttons { display: flex; gap: 6px; background: #1d1d22; padding: 4px; border-radius: 8px; border: 1px solid #27272a; width: 100%; }
+.filter-btn { flex: 1; background: transparent; border: none; color: #71717a; padding: 10px; font-size: 11px; font-weight: 700; letter-spacing: 1px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
 .filter-btn.active { background: #ffffff; color: #0f0f11; }
-.tasks-container { display: flex; flex-direction: column; gap: 12px; min-height: 100px; }
-.no-tasks { text-align: center; color: #71717a; font-size: 13px; font-style: italic; padding: 20px 0; }
-
-/* Карточка задачи в листе */
-.task-item { background: #1d1d22; border: 1px solid #27272a; border-radius: 8px; padding: 16px; border-left: 4px solid #ffffff; position: relative; }
-.task-item-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-.task-item-tech { font-weight: 700; font-size: 14px; color: #ffffff; }
-.task-item-user { font-size: 12px; color: #a1a1aa; background: #27272a; padding: 2px 8px; border-radius: 4px; }
-.task-item-duration { font-size: 12px; color: #71717a; margin-bottom: 8px; }
-.task-item-comment { font-size: 13px; color: #e4e4e7; line-height: 1.4; background: #16161a; padding: 10px; border-radius: 6px; white-space: pre-wrap; }
+.tasks-container { display: flex; flex-direction: column; gap: 14px; }
+.no-tasks { text-align: center; color: #71717a; font-size: 13px; font-style: italic; padding: 30px 0; }
+.task-item { background: #1d1d22; border: 1px solid #27272a; border-radius: 8px; padding: 18px; border-left: 4px solid #ffffff; animation: slideIn 0.2s ease forwards; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.task-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.task-item-tech { font-weight: 800; font-size: 14px; color: #ffffff; letter-spacing: 0.5px; }
+.task-item-user { font-size: 11px; font-weight: 700; color: #a1a1aa; background: #27272a; padding: 3px 8px; border-radius: 4px; }
+.task-item-duration { font-size: 12px; color: #71717a; margin-bottom: 10px; }
+.task-item-comment { font-size: 13px; color: #e4e4e7; line-height: 1.5; background: #16161a; padding: 12px; border-radius: 6px; white-space: pre-wrap; border: 1px solid #27272a; }
