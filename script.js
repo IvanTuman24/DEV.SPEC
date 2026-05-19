@@ -5,13 +5,13 @@ const ADMIN_ID = "702501770";
 // МАПА телеграм-ников заказчиков
 // ЗАМКНУТЕ НИКИ В КАВЫЧКАХ
 const userTelegramMap = {
-    "Женя Борода": "username",
-    "Влад": "username",
+    "Женя Борода": "Happiness091",
+    "Влад": "free8from",
     "Ник": "username",
-    "Никита": "username",
-    "Алёна Грибова": "username",
-    "Нася You": "username",
-    "Натали": "username"
+    "Никита": "Shmn32",
+    "Алёна Грибова": "alionagrib",
+    "Нася You": "youjwllr",
+    "Натали": "ntlngvtsn"
 };
 
 // СМЕНА ТЕМЫ
@@ -75,12 +75,12 @@ function validateDateRestrictions(selectedDateStr, today, warningElement) {
     // Проверка: на следующий день только до 16:00
     if (selectedDate.toDateString() === tomorrow.toDateString()) {
         if (currentHour >= 16) {
-            warning = '⚠️ На следующий день уже нельзя задать (сейчас после 16:00)';
+            warning = '⚠️ На следующий день уже нельзя задать (до 16:00)';
             isWarning = true;
         }
     } else if (selectedDate < tomorrow) {
         // Прышлые даты заблокированы
-        warning = '⚠️ Невозможно выбрать прышлые даты';
+        warning = '⚠️ Невозможно выбрать прошлые даты';
         isWarning = true;
     }
     
@@ -127,7 +127,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
     submitBtn.disabled = true;
     statusMsg.className = "status-msg";
-    statusMsg.textContent = "Отправка заявки исполнителям...";
+    statusMsg.textContent = "ОБРАБОТКА";
 
     const tech = document.querySelector('input[name="tech"]:checked').value;
     const rawDate = document.getElementById('date').value;
@@ -144,14 +144,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
     // ШАБЛОН ТЕКСТОВОЙ КАРтОЧКИ
     const messageText = 
-`📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
-━━━━━━━━━━━━━━━
-⚙️ **Техника:** ${tech}
-📅 **Когда:** ${formattedDate}
-⏳ **На сколько:** ${duration}
-👤 **Заказчик:** ${finalUsername}
-━━━━━━━━━━━━━━━
-📝 **Задача и ТЗ:**
+` НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
+
+ **Техника:** ${tech}
+ **Когда:** ${formattedDate}
+ **На сколько:** ${duration}
+  **Заказчик:** ${finalUsername}
+
+  **Задача и ТЗ:**
 ${comment}`;
 
     try {
@@ -202,13 +202,13 @@ ${comment}`;
         
         if (userTgUsername) {
             const userMessage = 
-`✅ **ВАША ЗАЯВКА ОПРИНяТА НА ВЫПОлНЕНИЕ**
+`**ВАША ЗАЯВКА ОПРИНяТА НА ВЫПОлНЕНИЕ**
 ━━━━━━━━━━━━━━━
-⚙️ Техника: ${tech}
-📅 Дата: ${formattedDate}
-⏳ На сколько: ${duration}
-━━━━━━━━━━━━━━━
-📝 ТЗ: ${comment}`;
+ Техника: ${tech}
+ Дата: ${formattedDate}
+ На сколько: ${duration}
+
+ ТЗ: ${comment}`;
             
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
