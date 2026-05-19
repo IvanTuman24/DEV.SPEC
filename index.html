@@ -8,6 +8,13 @@
 </head>
 <body>
 
+<!-- Кнопка смены темы -->
+<div class="theme-toggle-btn">
+    <button id="themeToggleBtn" aria-label="Сменить тему">
+        <span class="theme-icon">🌚</span>
+    </button>
+</div>
+
 <div class="app-container">
     <header class="main-header">
         <h1>ТЕХНИКА</h1>
@@ -50,6 +57,7 @@
                 <div class="form-group half">
                     <label for="date">2. КОГДА</label>
                     <input type="date" id="date" name="date" required>
+                    <div id="dateWarning" class="date-warning"></div>
                 </div>
 
                 <div class="form-group half">
@@ -67,7 +75,7 @@
                     <option value="Ник">Ник</option>
                     <option value="Никита">Никита</option>
                     <option value="Алёна Грибова">Алёна Грибова</option>
-                    <option value="НасяYou">НасяYou</option>
+                    <option value="Нася You">Нася You</option>
                     <option value="Натали">Натали</option>
                     <option value="Иначе">Иначе...</option>
                 </select>

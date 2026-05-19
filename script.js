@@ -1,9 +1,44 @@
+// КОНФИГУРАЦИОННЫЕ ПАРАМЕТРЫ
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// --- УПРАВЛЕНИЕ КАЛЕНДАРЕМ (ДЕФОЛТНОЕ СЕГОДНЯ + БЛОК ПРОШЛОГО) ---
+// МАПА телеграм-ников заказчиков
+// ЗАМКНУТЕ НИКИ В КАВЫЧКАХ
+const userTelegramMap = {
+    "Женя Борода": "username",
+    "Влад": "username",
+    "Ник": "username",
+    "Никита": "username",
+    "Алёна Грибова": "username",
+    "Нася You": "username",
+    "Натали": "username"
+};
+
+// СМЕНА ТЕМЫ
+document.addEventListener('DOMContentLoaded', function() {
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeToggleBtn.textContent = '☀️';
+    } else {
+        themeToggleBtn.textContent = '🌚';
+    }
+    
+    themeToggleBtn.addEventListener('click', function() {
+        document.body.classList.toggle('light-theme');
+        const isLight = document.body.classList.contains('light-theme');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        themeToggleBtn.textContent = isLight ? '☀️' : '🌚';
+    });
+});
+
+// УПРАВЛЕНИЕ КАЛЕНДАРЕМ (ДЕФОЛТНОЕ СЕГОДНЯ ВАЛИДАЦИЯ ДНЕЙ)
 document.addEventListener("DOMContentLoaded", function() {
     const dateInput = document.getElementById('date');
+    const dateWarning = document.getElementById('dateWarning');
+    
     if (dateInput) {
         const today = new Date();
         const yyyy = today.getFullYear();
@@ -16,11 +51,49 @@ document.addEventListener("DOMContentLoaded", function() {
         const formattedToday = `${yyyy}-${mm}-${dd}`;
         
         dateInput.value = formattedToday; 
-        dateInput.min = formattedToday;   
+        dateInput.min = formattedToday;
+        
+        // Проверка выбранной даты
+        dateInput.addEventListener('change', function() {
+            validateDateRestrictions(this.value, today, dateWarning);
+        });
+        
+        validateDateRestrictions(formattedToday, today, dateWarning);
     }
 });
 
-// --- ЛОГИКА ВЫБОРА ЗАКАЗЧИКА ("ИНАЧЕ") ---
+// ФУНКЦИОНАЛ ОГРАНИЧЕНий БРОНИРОВАНия
+function validateDateRestrictions(selectedDateStr, today, warningElement) {
+    const selectedDate = new Date(selectedDateStr + 'T00:00:00');
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const currentHour = today.getHours();
+    let warning = '';
+    let isWarning = false;
+    
+    // Проверка: на следующий день только до 16:00
+    if (selectedDate.toDateString() === tomorrow.toDateString()) {
+        if (currentHour >= 16) {
+            warning = '⚠️ На следующий день уже нельзя задать (сейчас после 16:00)';
+            isWarning = true;
+        }
+    } else if (selectedDate < tomorrow) {
+        // Прышлые даты заблокированы
+        warning = '⚠️ Невозможно выбрать прышлые даты';
+        isWarning = true;
+    }
+    
+    if (isWarning) {
+        warningElement.textContent = warning;
+        warningElement.style.display = 'block';
+    } else {
+        warningElement.style.display = 'none';
+        warningElement.textContent = '';
+    }
+}
+
+// ЛОГИКА ВЫБОРА ЗАКАЗЧИКА ("ИНАЧЕ")
 const usernameSelect = document.getElementById('usernameSelect');
 const customUsernameInput = document.getElementById('customUsername');
 
@@ -45,7 +118,7 @@ document.getElementById('fileInput').addEventListener('change', function() {
     }
 });
 
-// Отправка формы в Telegram
+// ОТПРАВКА ФОРМЫ В ТЕЛЕГРАМ (АДМИНУ + ЗАКАЗЧИКУ)
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -69,7 +142,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
     const formattedDate = rawDate.split('-').reverse().join('.');
 
-    // Шаблон текстовой карточки
+    // ШАБЛОН ТЕКСТОВОЙ КАРтОЧКИ
     const messageText = 
 `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
 ━━━━━━━━━━━━━━━
@@ -84,7 +157,7 @@ ${comment}`;
     try {
         let response;
         
-        // Добавляем принудительный разрыв зависшего соединения через 15 секунд
+        // Принудительный разрыв зависшего соединения через 15 секунд
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -122,7 +195,38 @@ ${comment}`;
             throw new Error(errData.description || 'Неизвестная ошибка Telegram API');
         }
 
-        // Успешный исход
+        // ===============================================
+        // ОТПРАВКА ДУБЛЯ ЗАКАЗЧИКУ В ЛИЧНЫЕ СООБЩЕНИЯ
+        // ===============================================
+        const userTgUsername = userTelegramMap[finalUsername];
+        
+        if (userTgUsername) {
+            const userMessage = 
+`✅ **ВАША ЗАЯВКА ОПРИНяТА НА ВЫПОлНЕНИЕ**
+━━━━━━━━━━━━━━━
+⚙️ Техника: ${tech}
+📅 Дата: ${formattedDate}
+⏳ На сколько: ${duration}
+━━━━━━━━━━━━━━━
+📝 ТЗ: ${comment}`;
+            
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: userTgUsername,
+                        text: userMessage,
+                        parse_mode: 'Markdown'
+                    }),
+                    signal: controller.signal
+                });
+            } catch (userError) {
+                console.warn('Отправка заказчику не работала, но админом уведомлен', userError);
+            }
+        }
+
+        // Успеховый исход
         statusMsg.className = "status-msg success";
         statusMsg.textContent = "✅ Заявка успешно доставлена постановщику задач!";
         document.getElementById('orderForm').reset();

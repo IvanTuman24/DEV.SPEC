@@ -13,6 +13,56 @@ body {
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme {
+    background-color: #f5f5f5;
+    color: #1a1a1a;
+}
+
+/* Кнопка смены темы */
+.theme-toggle-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+#themeToggleBtn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #27272a;
+    border-radius: 8px;
+    background-color: #1d1d22;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+#themeToggleBtn:hover {
+    border-color: #52525b;
+    transform: scale(1.05);
+}
+
+#themeToggleBtn:active {
+    transform: scale(0.95);
+}
+
+body.light-theme #themeToggleBtn {
+    background-color: #6b8f6b;
+    border-color: #6b8f6b;
+    color: #ffffff;
+}
+
+body.light-theme #themeToggleBtn:hover {
+    background-color: #5a7d5a;
+    border-color: #5a7d5a;
 }
 
 .app-container {
@@ -23,6 +73,13 @@ body {
     border-radius: 12px;
     padding: 40px 30px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+body.light-theme .app-container {
+    background-color: #ffffff;
+    border-color: #e0e0e0;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
 .main-header {
@@ -30,6 +87,11 @@ body {
     margin-bottom: 35px;
     border-bottom: 1px solid #27272a;
     padding-bottom: 20px;
+    transition: border-color 0.3s ease;
+}
+
+body.light-theme .main-header {
+    border-bottom-color: #e0e0e0;
 }
 
 .main-header h1 {
@@ -37,6 +99,11 @@ body {
     font-weight: 800;
     letter-spacing: 3px;
     color: #ffffff;
+    transition: color 0.3s ease;
+}
+
+body.light-theme .main-header h1 {
+    color: #1a1a1a;
 }
 
 .subtitle {
@@ -44,6 +111,11 @@ body {
     color: #71717a;
     margin-top: 6px;
     letter-spacing: 0.5px;
+    transition: color 0.3s ease;
+}
+
+body.light-theme .subtitle {
+    color: #666666;
 }
 
 .form-group {
@@ -73,6 +145,12 @@ label, .group-title {
     letter-spacing: 1px;
     color: #71717a;
     margin-bottom: 8px;
+    transition: color 0.3s ease;
+}
+
+body.light-theme label,
+body.light-theme .group-title {
+    color: #666666;
 }
 
 .tech-grid {
@@ -103,6 +181,11 @@ label, .group-title {
     transition: all 0.2s ease;
 }
 
+body.light-theme .card-content {
+    background-color: #f9f9f9;
+    border-color: #e0e0e0;
+}
+
 .card-content .icon {
     font-size: 22px;
 }
@@ -111,6 +194,11 @@ label, .group-title {
     font-size: 13px;
     font-weight: 600;
     color: #a1a1aa;
+    transition: color 0.3s ease;
+}
+
+body.light-theme .card-content .title {
+    color: #666666;
 }
 
 .tech-card input[type="radio"]:checked + .card-content {
@@ -118,8 +206,17 @@ label, .group-title {
     border-color: #ffffff;
 }
 
+body.light-theme .tech-card input[type="radio"]:checked + .card-content {
+    background-color: #6b8f6b;
+    border-color: #6b8f6b;
+}
+
 .tech-card input[type="radio"]:checked + .card-content .title {
     color: #0f0f11;
+}
+
+body.light-theme .tech-card input[type="radio"]:checked + .card-content .title {
+    color: #ffffff;
 }
 
 select, input[type="text"], input[type="date"], textarea {
@@ -131,16 +228,45 @@ select, input[type="text"], input[type="date"], textarea {
     border-radius: 8px;
     font-size: 15px;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: all 0.3s ease;
+}
+
+body.light-theme select,
+body.light-theme input[type="text"],
+body.light-theme input[type="date"],
+body.light-theme textarea {
+    background-color: #ffffff;
+    border-color: #e0e0e0;
+    color: #1a1a1a;
 }
 
 select:focus, input[type="text"]:focus, input[type="date"]:focus, textarea:focus {
     border-color: #ffffff;
 }
 
+body.light-theme select:focus,
+body.light-theme input[type="text"]:focus,
+body.light-theme input[type="date"]:focus,
+body.light-theme textarea:focus {
+    border-color: #6b8f6b;
+}
+
 textarea {
     height: 110px;
     resize: none;
+}
+
+/* Предупреждение о дате */
+.date-warning {
+    font-size: 11px;
+    color: #e74c3c;
+    margin-top: 4px;
+    font-weight: 500;
+    display: none;
+}
+
+body.light-theme .date-warning {
+    color: #c0392b;
 }
 
 .hidden-input {
@@ -161,6 +287,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     transition: opacity 0.2s ease;
 }
 
+body.light-theme input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0);
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
 }
@@ -173,11 +303,20 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     border-radius: 8px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s ease;
+    transition: all 0.3s ease;
+}
+
+body.light-theme .file-upload-zone {
+    border-color: #e0e0e0;
+    background-color: #f9f9f9;
 }
 
 .file-upload-zone:hover {
     border-color: #52525b;
+}
+
+body.light-theme .file-upload-zone:hover {
+    border-color: #6b8f6b;
 }
 
 .file-upload-zone input[type="file"] {
@@ -193,6 +332,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .file-custom-text {
     font-size: 13px;
     color: #a1a1aa;
+    transition: color 0.3s ease;
+}
+
+body.light-theme .file-custom-text {
+    color: #666666;
 }
 
 .file-preview-text {
@@ -213,18 +357,32 @@ button[type="submit"] {
     letter-spacing: 1px;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.3s ease;
     margin-top: 10px;
+}
+
+body.light-theme button[type="submit"] {
+    background-color: #6b8f6b;
+    color: #ffffff;
 }
 
 button[type="submit"]:hover {
     background-color: #e4e4e7;
 }
 
+body.light-theme button[type="submit"]:hover {
+    background-color: #5a7d5a;
+}
+
 button[type="submit"]:disabled {
     background-color: #27272a;
     color: #71717a;
     cursor: not-allowed;
+}
+
+body.light-theme button[type="submit"]:disabled {
+    background-color: #cccccc;
+    color: #999999;
 }
 
 .status-msg {
@@ -235,3 +393,6 @@ button[type="submit"]:disabled {
 }
 .status-msg.success { color: #2ecc71; }
 .status-msg.error { color: #e74c3c; }
+
+body.light-theme .status-msg.success { color: #27ae60; }
+body.light-theme .status-msg.error { color: #c0392b; }
