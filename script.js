@@ -1,11 +1,6 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// Глобальный отказоустойчивый репозиторий данных (работает на всех устройствах)
-const BIN_ID = "657ed926dc746540188448b1"; 
-const GLOBAL_DB_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-const MASTER_KEY = "$2a$10$X86Z9967N4XG97b7K89B7Oux9T7mEunpPqgKx2wzG5kX1v52WmuX6"; // Публичный мастер-ключ для чтения/записи
-
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
     "Влад": "@free8from",
@@ -22,7 +17,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        await loadTasksFromGlobalCloud();
+        // Логика для любого устройства, зашедшего на расписание
+        await loadTasksFromTelegramLogs();
         renderTasks('today');
         initFilterButtons();
     } else {
@@ -31,42 +27,82 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 });
 
-// --- СИНХРОНИЗАЦИЯ С ГЛОБАЛЬНЫМ ХРАНИЛИЩЕМ (БЕЗ CORS ОШИБОК) ---
-async function loadTasksFromGlobalCloud() {
+// --- ГЛОБАЛЬНОЕ ЧТЕНИЕ ИЗ ТЕЛЕГРАМА (ДЛЯ ВСЕХ УСТРОЙСТВ) ---
+async function loadTasksFromTelegramLogs() {
+    const container = document.getElementById('tasksContainer');
     try {
-        const response = await fetch(`${GLOBAL_DB_URL}/latest`, {
-            method: 'GET',
-            headers: { 'X-Master-Key': MASTER_KEY }
-        });
+        // Запрашиваем у Телеграма последние 50 сообщений из нашего рабочего чата/канала
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=-50&allowed_updates=["message"]`);
+        
         if (response.ok) {
-            const resData = await response.json();
-            localTasks = resData.record.tasks || [];
-            localTasks.sort((a, b) => b.timestamp - a.timestamp);
-        } else {
+            const data = await response.json();
+            const updates = data.result || [];
+            
             localTasks = [];
+            
+            updates.forEach(upd => {
+                // Ищем текстовые сообщения или подписи к документам, содержащие ключевую фразу ТЗ
+                let text = "";
+                if (upd.message && upd.message.text) text = upd.message.text;
+                if (upd.message && upd.message.caption) text = upd.message.caption;
+                
+                if (text.includes("📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ")) {
+                    parseAndAddTelegramTask(text, upd.message.date * 1000);
+                }
+            });
+
+            // Сортируем: свежие ТЗ всегда вверху
+            localTasks.sort((a, b) => b.timestamp - a.timestamp);
         }
     } catch (e) {
-        console.log("Ошибка загрузки глобального расписания:", e);
-        localTasks = [];
+        console.error("Ошибка чтения логов Telegram:", e);
     }
 }
 
-async function saveTasksToGlobalCloud() {
+// Извлекаем чистые данные из текстовой карточки Телеграма
+function parseAndAddTelegramTask(text, msgTimestamp) {
     try {
-        await fetch(GLOBAL_DB_URL, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': MASTER_KEY
-            },
-            body: JSON.stringify({ tasks: localTasks })
+        const lines = text.split("\n");
+        let tech = "🚜 Техника";
+        let date = "";
+        let duration = "";
+        let username = "";
+        let commentLines = [];
+        let isCommentZone = false;
+
+        lines.forEach(line => {
+            if (line.includes("⚙️ Техника:")) tech = line.split("Техника:")[-1].trim().replace(/\*/g, "");
+            if (line.includes("📅 Когда:")) date = line.split("Когда:")[-1].strip().replace(/\*/g, "");
+            if (line.includes("⏳ На сколько:") || line.includes("⏳ Время:")) duration = line.split(":")[-1].trim().replace(/\*/g, "");
+            if (line.includes("👤 Заказчик:")) username = line.split("Заказчик:")[-1].trim().replace(/\*/g, "");
+            
+            if (isCommentZone) {
+                commentLines.push(line);
+            }
+            if (line.includes("📝 Задача и ТЗ:")) {
+                isCommentZone = true;
+            }
         });
-    } catch (e) {
-        console.error("Ошибка сохранения в облако:", e);
+
+        // Собираем ТЗ обратно в текст
+        let comment = commentLines.join("\n").trim();
+
+        if (date) {
+            localTasks.push({
+                tech,
+                date, // Уже в формате ДД.ММ.ГГГГ
+                duration,
+                username,
+                comment,
+                timestamp: msgTimestamp
+            });
+        }
+    } catch (err) {
+        console.log("Ошибка парсинга отдельной карточки", err);
     }
 }
 
-// --- ОТРИСОВКА ГРАФИКА ЗАДАЧ ---
+// --- ОТРИСОВКА ПРИМИТИВНОГО ГРАФИКА ЗАДАЧ ---
 function renderTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -196,26 +232,11 @@ function initFormLogic() {
 
             submitBtn.disabled = true;
             statusMsg.className = "status-msg";
-            statusMsg.textContent = "Синхронизация с глобальным графиком...";
+            statusMsg.textContent = "Синхронизация с графиком и отправка...";
 
             const formattedDate = rawDate.split('-').reverse().join('.');
 
-            // Скачиваем актуальный массив со всех устройств, добавляем задачу, отправляем обратно
-            await loadTasksFromGlobalCloud();
-            
-            const newTask = {
-                tech,
-                date: formattedDate,
-                duration,
-                username: finalUsername,
-                comment,
-                timestamp: Date.now()
-            };
-            localTasks.push(newTask);
-            
-            await saveTasksToGlobalCloud();
-
-            const messageText = `📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n━━━━━━━━━━━━━━━\n⚙️ Техника: ${tech}\n📅 Когда: ${formattedDate}\n⏳ Время: ${duration}\n👤 Заказчик: ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 ТЗ сохранено в общий график.`;
+            const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Задача и ТЗ:**\n${comment}`;
 
             try {
                 let response;
@@ -227,28 +248,30 @@ function initFormLogic() {
                     formData.append('chat_id', ADMIN_ID);
                     formData.append('document', fileInput.files[0]);
                     formData.append('caption', messageText);
+                    formData.append('parse_mode', 'Markdown');
                     response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData, signal: controller.signal });
                 } else {
                     response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText }),
+                        body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText, parse_mode: 'Markdown' }),
                         signal: controller.signal
                     });
                 }
 
                 clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('Ошибка Telegram API');
 
                 statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Задача занесена в общий график расписания!";
+                statusMsg.textContent = "✅ Задача занесена в глобальный график расписания!";
                 orderForm.reset();
                 if (document.getElementById('file-name-preview')) document.getElementById('file-name-preview').textContent = '';
                 customUsernameInput.style.display = 'none';
                 initCalendar();
 
             } catch (error) {
-                statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Внесено в общий график на сайте! (Уведомление в ТГ задерживается, включите VPN).";
+                statusMsg.className = "status-msg error";
+                statusMsg.textContent = "❌ Ошибка сети. Для отправки заявки включите VPN.";
             } finally {
                 submitBtn.disabled = false;
             }
