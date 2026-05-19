@@ -1,7 +1,7 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// Авто-выставление текущей даты
+// --- УПРАВЛЕНИЕ КАЛЕНДАРЕМ (ДЕФОЛТНОЕ СЕГОДНЯ + БЛОК ПРОШЛОГО) ---
 document.addEventListener("DOMContentLoaded", function() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
@@ -14,12 +14,13 @@ document.addEventListener("DOMContentLoaded", function() {
         if (mm < 10) mm = '0' + mm;
 
         const formattedToday = `${yyyy}-${mm}-${dd}`;
+        
         dateInput.value = formattedToday; 
         dateInput.min = formattedToday;   
     }
 });
 
-// Переключатель скрытого инпута "Иначе"
+// --- ЛОГИКА ВЫБОРА ЗАКАЗЧИКА ("ИНАЧЕ") ---
 const usernameSelect = document.getElementById('usernameSelect');
 const customUsernameInput = document.getElementById('customUsername');
 
@@ -30,10 +31,11 @@ usernameSelect.addEventListener('change', function() {
     } else {
         customUsernameInput.style.display = 'none';
         customUsernameInput.required = false;
-        customUsernameInput.value = '';
+        customUsernameInput.value = ''; 
     }
 });
 
+// Отображение имени прикрепленного файла
 document.getElementById('fileInput').addEventListener('change', function() {
     const preview = document.getElementById('file-name-preview');
     if (this.files.length > 0) {
@@ -43,18 +45,7 @@ document.getElementById('fileInput').addEventListener('change', function() {
     }
 });
 
-// Функция отправки через создание виртуального элемента Image (100% обход CORS и зависаний)
-function sendViaPixel(url) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve();
-        img.onerror = () => resolve(); // Почти всегда Telegram возвращает пустой пиксель, так что это успех
-        img.src = url;
-        // Защита по таймауту на 10 секунд
-        setTimeout(() => resolve(), 10000);
-    });
-}
-
+// Отправка формы в Telegram
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -78,40 +69,60 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
     const formattedDate = rawDate.split('-').reverse().join('.');
 
-    // Шаблон для Telegram карточки
+    // Шаблон текстовой карточки
     const messageText = 
-`📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n` +
-`━━━━━━━━━━━━━━━\n` +
-`⚙️ Техника: ${tech}\n` +
-`📅 Когда: ${formattedDate}\n` +
-`⏳ На сколько: ${duration}\n` +
-`👤 Заказчик: ${finalUsername}\n` +
-`━━━━━━━━━━━━━━━\n` +
-`📝 Задача и ТЗ:\n` +
-`${comment}`;
+`📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**
+━━━━━━━━━━━━━━━
+⚙️ **Техника:** ${tech}
+📅 **Когда:** ${formattedDate}
+⏳ **На сколько:** ${duration}
+👤 **Заказчик:** ${finalUsername}
+━━━━━━━━━━━━━━━
+📝 **Задача и ТЗ:**
+${comment}`;
 
     try {
-        // Если прикреплен файл — отправляем через стандартный fetch
+        let response;
+        
+        // Добавляем принудительный разрыв зависшего соединения через 15 секунд
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         if (fileInput.files.length > 0) {
+            // Если отправляется файл
             const formData = new FormData();
             formData.append('chat_id', ADMIN_ID);
             formData.append('document', fileInput.files[0]);
             formData.append('caption', messageText);
+            formData.append('parse_mode', 'Markdown');
 
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                signal: controller.signal
             });
-
-            if (!response.ok) throw new Error('Ошибка отправки файла');
         } else {
-            // Если файла нет — бьем бронебойным пиксель-запросом, который никогда не виснет
-            const encodedText = encodeURIComponent(messageText);
-            const pixelUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodedText}`;
-            await sendViaPixel(pixelUrl);
+            // Если отправляется только чистый текст
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: ADMIN_ID,
+                    text: messageText,
+                    parse_mode: 'Markdown'
+                }),
+                signal: controller.signal
+            });
         }
 
-        // Выводим успешный статус пользователю
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.description || 'Неизвестная ошибка Telegram API');
+        }
+
+        // Успешный исход
         statusMsg.className = "status-msg success";
         statusMsg.textContent = "✅ Заявка успешно доставлена постановщику задач!";
         document.getElementById('orderForm').reset();
@@ -122,9 +133,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         document.getElementById('date').value = today;
 
     } catch (error) {
-        console.error(error);
+        console.error('Ошибка при отправке в Telegram:', error);
         statusMsg.className = "status-msg error";
-        statusMsg.textContent = "❌ Ошибка отправки. Попробуйте еще раз с включенным VPN.";
+        
+        if (error.name === 'AbortError') {
+            statusMsg.textContent = "❌ Время ожидания истекло. Проверьте сеть или VPN.";
+        } else {
+            statusMsg.textContent = "❌ Ошибка сети. Убедитесь, что Telegram доступен на вашем устройстве.";
+        }
     } finally {
         submitBtn.disabled = false;
     }
