@@ -7,7 +7,7 @@ const ADMIN_ID = "702501770";
 const userTelegramMap = {
     "Женя Борода": "Happiness091",
     "Влад": "free8from",
-    "Ник": "fyrfyrmoscow",
+    "Ник": "@fyrfyrmoscow",
     "Никита": "Shmn32",
     "Алёна Грибова": "alionagrib",
     "Нася You": "youjwllr",
