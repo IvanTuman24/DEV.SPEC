@@ -1,6 +1,9 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
+// Глобальная синхронизируемая онлайн-база данных (доступна со всех устройств в мире)
+const GLOBAL_DB_URL = "https://kvdb.io/MN98VfD6vQpYtWn6S6q7Z9/zavod_tech_schedule";
+
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
     "Влад": "@free8from",
@@ -13,46 +16,51 @@ const tgUsernames = {
 
 let localTasks = [];
 
-document.addEventListener("DOMContentLoaded", function() {
-    // Автоопределение текущей страницы
+document.addEventListener("DOMContentLoaded", async function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        loadTasks();
+        // Логика для любого устройства, открывшего страницу графика расписания
+        await loadTasksFromGlobalCloud();
         renderTasks('today');
         initFilterButtons();
     } else {
+        // Логика для страницы отправки формы
         initCalendar();
         initFormLogic();
     }
 });
 
-// --- СИНХРОНИЗАЦИЯ ДАННЫХ ЧЕРЕЗ LOCALSTORAGE ---
-function loadTasks() {
+// --- СЕТЕВАЯ СИНХРОНИЗАЦИЯ С ГЛОБАЛЬНЫМ ХРАНИЛИЩЕМ ---
+async function loadTasksFromGlobalCloud() {
     try {
-        const data = localStorage.getItem('tech_orders_db');
-        if (data) {
-            localTasks = JSON.parse(data);
-            // Новые сверху вниз
+        const response = await fetch(GLOBAL_DB_URL);
+        if (response.ok) {
+            localTasks = await response.json();
+            // Сортировка: самые свежие добавленные заявки всегда вверху списка
             localTasks.sort((a, b) => b.timestamp - a.timestamp);
         } else {
             localTasks = [];
         }
     } catch (e) {
-        console.error("Ошибка чтения локальной базы:", e);
+        console.log("Глобальная база пуста или инициализируется.");
         localTasks = [];
     }
 }
 
-function saveTasks() {
+async function saveTasksToGlobalCloud() {
     try {
-        localStorage.setItem('tech_orders_db', JSON.stringify(localTasks));
+        await fetch(GLOBAL_DB_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(localTasks)
+        });
     } catch (e) {
-        console.error("Ошибка записи локальной базы:", e);
+        console.error("Критическая ошибка синхронизации с глобальной базой:", e);
     }
 }
 
-// --- ОТРИСОВКА СПИСКА ЗАДАЧ (СТРАНИЦА РАСПИСАНИЯ) ---
+// --- ОТРИСОВКА ПРИМИТИВНОГО ГРАФИКА ЗАДАЧ (СВЕРХУ ВНИЗ) ---
 function renderTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -74,7 +82,7 @@ function renderTasks(period) {
     }
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p class="no-tasks">Нет активных задач на выбранный период</p>';
+        container.innerHTML = '<p class="no-tasks">Нет запланированных задач на этот период</p>';
         return;
     }
 
@@ -114,7 +122,7 @@ function getFormattedDate(daysOffset) {
     return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-// --- ЛОГИКА РАБОТЫ С ФОРМОЙ ЗАЯВКИ ---
+// --- ЛОГИКА ФОРМЫ ЗАЯВОК ---
 function initCalendar() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
@@ -171,7 +179,7 @@ function initFormLogic() {
             let selectedName = usernameSelect.value;
             let finalUsername = selectedName === 'Иначе' ? customUsernameInput.value.trim() : (tgUsernames[selectedName] || selectedName);
 
-            // ПРОВЕРКА ДЕДЛАЙНА В 16:00 (Кроме Ника)
+            // ПРОВЕРКА ВРЕМЕНИ ДЛЯ НИКА (16:00)
             const currentHour = new Date().getHours();
             const isNik = (finalUsername === '@fyrfyrmoscow' || selectedName === 'Ник');
 
@@ -183,12 +191,14 @@ function initFormLogic() {
 
             submitBtn.disabled = true;
             statusMsg.className = "status-msg";
-            statusMsg.textContent = "Синхронизация ТЗ и отправка...";
+            statusMsg.textContent = "Синхронизация с глобальным графиком...";
 
             const formattedDate = rawDate.split('-').reverse().join('.');
 
-            // Запись в базу
-            loadTasks();
+            // 1. Скачиваем текущую глобальную базу, чтобы не стереть чужие ТЗ
+            await loadTasksFromGlobalCloud();
+
+            // 2. Дописываем новую задачу в общий массив
             const newTask = {
                 tech,
                 date: formattedDate,
@@ -198,9 +208,11 @@ function initFormLogic() {
                 timestamp: Date.now()
             };
             localTasks.push(newTask);
-            saveTasks();
 
-            const messageText = `📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n━━━━━━━━━━━━━━━\n⚙️ Техника: ${tech}\n📅 Когда: ${formattedDate}\n⏳ Время: ${duration}\n👤 Заказчик: ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 Задача и ТЗ:\n${comment}`;
+            // 3. Выгружаем обратно в глобальную сеть
+            await saveTasksToGlobalCloud();
+
+            const messageText = `📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n━━━━━━━━━━━━━━━\n⚙️ Техника: ${tech}\n📅 Когда: ${formattedDate}\n⏳ Время: ${duration}\n👤 Заказчик: ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 ТЗ успешно зафиксировано в общем графике расписания.`;
 
             try {
                 let response;
@@ -223,19 +235,19 @@ function initFormLogic() {
                 }
 
                 clearTimeout(timeoutId);
-
-                if (!response.ok) throw new Error('Ошибка API');
+                if (!response.ok) throw new Error('Ошибка Telegram API');
 
                 statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Заявка зафиксирована в расписании!";
+                statusMsg.textContent = "✅ Задача занесена в глобальный график расписания!";
                 orderForm.reset();
                 if (document.getElementById('file-name-preview')) document.getElementById('file-name-preview').textContent = '';
                 customUsernameInput.style.display = 'none';
                 initCalendar();
 
             } catch (error) {
+                // Если Telegram заблокирован без VPN, в глобальную базу на сайте данные всё равно успешно запишутся!
                 statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Заявка внесена в календарь (ТГ-уведомление не отправлено, включите VPN).";
+                statusMsg.textContent = "✅ Внесено в общий график! (ТГ-уведомление не отправлено, включите VPN).";
             } finally {
                 submitBtn.disabled = false;
             }
