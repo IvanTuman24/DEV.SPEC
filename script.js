@@ -3,15 +3,15 @@ const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
 // МАПА телеграм-ников заказчиков
-// ЗАМКНУТЕ НИКИ В КАВЫЧКАХ
-const userTelegramMap = {
-    "Женя Борода": "Happiness091",
-    "Влад": "free8from",
+// --- СЛОВАРЬ ДЛЯ АВТОПОДСТАНОВКИ ТГ-НИКОВ ---
+const tgUsernames = {
+    "Женя Борода": "@Happiness091",
+    "Влад": "@free8from",
     "Ник": "@fyrfyrmoscow",
-    "Никита": "Shmn32",
-    "Алёна Грибова": "alionagrib",
-    "Нася You": "youjwllr",
-    "Натали": "ntlngvtsn"
+    "Никита": "@Shmn32",
+    "Алёна Грибова": "@alionagrib",
+    "Нася You": "@youjwllr",
+    "Натали": "@ntlngvtsn"
 };
 
 // СМЕНА ТЕМЫ
