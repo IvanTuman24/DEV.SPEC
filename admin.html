@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТЕХНИКА — Мониторинг расписания</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+    <header class="main-header">
+        <h1>РАСПИСАНИЕ ЗАДАЧ</h1>
+        <p class="subtitle">актуальный тайминг техники и исполнителей</p>
+    </header>
+
+    <section class="admin-section">
+        <div class="admin-header">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-period="today">СЕГОДНЯ</button>
+                <button class="filter-btn" data-period="tomorrow">ЗАВТРА</button>
+                <button class="filter-btn" data-period="week">НЕДЕЛЯ</button>
+            </div>
+        </div>
+        
+        <div id="tasksContainer" class="tasks-container">
+            <p class="no-tasks">Синхронизация с облаком...</p>
+        </div>
+    </section>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
