@@ -1,9 +1,6 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// Распределенная облачная база данных (задачи видны всем, у кого есть ссылка)
-const DB_URL = "https://kvdb.io/MN98VfD6vQpYtWn6S6q7Z9/tasks_db";
-
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
     "Влад": "@free8from",
@@ -16,45 +13,42 @@ const tgUsernames = {
 
 let localTasks = [];
 
-document.addEventListener("DOMContentLoaded", async function() {
-    // Определяем, какая страница открыта
+document.addEventListener("DOMContentLoaded", function() {
+    // Автоопределение текущей страницы
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        // Логика для страницы расписания
-        await loadTasksFromCloud();
+        loadTasks();
         renderTasks('today');
         initFilterButtons();
     } else {
-        // Логика для главной страницы (формы)
         initCalendar();
         initFormLogic();
     }
 });
 
-// --- СЕТЕВАЯ СИНХРОНИЗАЦИЯ С ОБЛАКОМ ---
-async function loadTasksFromCloud() {
+// --- СИНХРОНИЗАЦИЯ ДАННЫХ ЧЕРЕЗ LOCALSTORAGE ---
+function loadTasks() {
     try {
-        const response = await fetch(DB_URL);
-        if (response.ok) {
-            localTasks = await response.json();
-            // Сортируем задачи: новые заявки всегда вверху списка
+        const data = localStorage.getItem('tech_orders_db');
+        if (data) {
+            localTasks = JSON.parse(data);
+            // Новые сверху вниз
             localTasks.sort((a, b) => b.timestamp - a.timestamp);
+        } else {
+            localTasks = [];
         }
     } catch (e) {
-        console.log("База данных пока пуста.");
+        console.error("Ошибка чтения локальной базы:", e);
         localTasks = [];
     }
 }
 
-async function saveTasksToCloud() {
+function saveTasks() {
     try {
-        await fetch(DB_URL, {
-            method: 'POST',
-            body: JSON.stringify(localTasks)
-        });
+        localStorage.setItem('tech_orders_db', JSON.stringify(localTasks));
     } catch (e) {
-        console.error("Ошибка сохранения в облако:", e);
+        console.error("Ошибка записи локальной базы:", e);
     }
 }
 
@@ -100,9 +94,10 @@ function renderTasks(period) {
 }
 
 function initFilterButtons() {
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             renderTasks(this.dataset.period);
         });
@@ -119,7 +114,7 @@ function getFormattedDate(daysOffset) {
     return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-// --- ЛОГИКА РАБОТЫ С ФОРМОЙ (ГЛАВНАЯ СТРАНИЦА) ---
+// --- ЛОГИКА РАБОТЫ С ФОРМОЙ ЗАЯВКИ ---
 function initCalendar() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
@@ -176,7 +171,7 @@ function initFormLogic() {
             let selectedName = usernameSelect.value;
             let finalUsername = selectedName === 'Иначе' ? customUsernameInput.value.trim() : (tgUsernames[selectedName] || selectedName);
 
-            // ПРОВЕРКА ВРЕМЕНИ И ПРИОРИТЕТА ДЛЯ НИКА (16:00)
+            // ПРОВЕРКА ДЕДЛАЙНА В 16:00 (Кроме Ника)
             const currentHour = new Date().getHours();
             const isNik = (finalUsername === '@fyrfyrmoscow' || selectedName === 'Ник');
 
@@ -192,10 +187,8 @@ function initFormLogic() {
 
             const formattedDate = rawDate.split('-').reverse().join('.');
 
-            // 1. Сначала подгружаем текущую базу из облака, чтобы случайно не затереть чужие заявки
-            await loadTasksFromCloud();
-
-            // 2. Добавляем новую задачу
+            // Запись в базу
+            loadTasks();
             const newTask = {
                 tech,
                 date: formattedDate,
@@ -205,27 +198,33 @@ function initFormLogic() {
                 timestamp: Date.now()
             };
             localTasks.push(newTask);
+            saveTasks();
 
-            // 3. Сохраняем обновленный массив в сеть
-            await saveTasksToCloud();
-
-            // 4. Параллельно дублируем карточку тебе в личку Telegram как уведомление
-            const messageText = `📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n━━━━━━━━━━━━━━━\n⚙️ Техника: ${tech}\n📅 Когда: ${formattedDate}\n⏳ Время: ${duration}\n👤 Заказчик: ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 ТЗ успешно зафиксировано в облачном расписании на сайте.`;
+            const messageText = `📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n━━━━━━━━━━━━━━━\n⚙️ Техника: ${tech}\n📅 Когда: ${formattedDate}\n⏳ Время: ${duration}\n👤 Заказчик: ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 Задача и ТЗ:\n${comment}`;
 
             try {
+                let response;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
                 if (fileInput && fileInput.files.length > 0) {
                     const formData = new FormData();
                     formData.append('chat_id', ADMIN_ID);
                     formData.append('document', fileInput.files[0]);
                     formData.append('caption', messageText);
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
+                    response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData, signal: controller.signal });
                 } else {
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText })
+                        body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText }),
+                        signal: controller.signal
                     });
                 }
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) throw new Error('Ошибка API');
 
                 statusMsg.className = "status-msg success";
                 statusMsg.textContent = "✅ Заявка зафиксирована в расписании!";
@@ -235,9 +234,8 @@ function initFormLogic() {
                 initCalendar();
 
             } catch (error) {
-                // Если нет VPN, в базу данные всё равно запишутся!
                 statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ В расписание внесено, но Telegram-уведомление не отправлено (включите VPN).";
+                statusMsg.textContent = "✅ Заявка внесена в календарь (ТГ-уведомление не отправлено, включите VPN).";
             } finally {
                 submitBtn.disabled = false;
             }
