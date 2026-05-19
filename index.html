@@ -8,17 +8,10 @@
 </head>
 <body>
 
-<!-- Кнопка смены темы -->
-<div class="theme-toggle-btn">
-    <button id="themeToggleBtn" aria-label="Сменить тему">
-        <span class="theme-icon">🌚</span>
-    </button>
-</div>
-
 <div class="app-container">
     <header class="main-header">
         <h1>ТЕХНИКА</h1>
-        <p class="subtitle">ЗАЯВКА НА ЗАДАЧУ </p>
+        <p class="subtitle">формирование technical-задания для исполнителей</p>
     </header>
 
     <main class="form-wrapper">
@@ -57,11 +50,10 @@
                 <div class="form-group half">
                     <label for="date">2. КОГДА</label>
                     <input type="date" id="date" name="date" required>
-                    <div id="dateWarning" class="date-warning"></div>
                 </div>
 
                 <div class="form-group half">
-                    <label for="duration">3. ВРЕМЯ </label>
+                    <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
                     <input type="text" id="duration" name="duration" placeholder="Например: 5 часов / Смена" required>
                 </div>
             </div>
@@ -83,7 +75,7 @@
             </div>
 
             <div class="form-group">
-                <label for="comment">5. ТЕХНИЧЕСКОЕ ЗАДАНИЕ</label>
+                <label for="comment">5. КОММЕНТАРИЙ И ТЗ</label>
                 <textarea id="comment" name="comment" placeholder="Подробно опишите задачу, локацию и нюансы работы..." required></textarea>
             </div>
 
