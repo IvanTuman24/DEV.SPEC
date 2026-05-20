@@ -1,14 +1,14 @@
-// ГЛОБАЛЬНЫЕ НАСТРОЙКИ ПОДКЛЮЧЕНИЯ ZAVOD
+// АКТУАЛЬНЫЕ ГЛОБАЛЬНЫЕ НАСТРОЙКИ СИНХРОНИЗАЦИИ ZAVOD
 const SUPABASE_URL = "https://hbktkdkhkcelrhelnpqw.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_Jm_YEe7bOO3Q8m5nXIHbFw_fgtjlBAf";
 
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// Инициализация клиента Supabase
+// Подключение к базе данных Supabase
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-// Справочник Telegram-аккаунтов для автоматического тегирования исполнителей
+// Список Telegram-аккаунтов команды для автоматического тегирования исполнителей
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
     "Влад": "@free8from",
@@ -25,12 +25,12 @@ document.addEventListener("DOMContentLoaded", async function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        // Логика для страницы расписания
+        // Оптимизированная логика графика расписания для всех устройств
         await loadTasksFromSupabase();
         renderTasks('today');
         initFilterButtons();
     } else {
-        // Логика для страницы отправки формы
+        // Логика формы заказа
         initCalendar();
         initFormWithBackup();
     }
@@ -40,13 +40,13 @@ document.addEventListener("DOMContentLoaded", async function() {
 function initFormWithBackup() {
     const fields = ['duration', 'usernameSelect', 'comment', 'customUsername'];
     
-    // Восстанавливаем данные из локального кэша, если страница перезагрузилась или упала
+    // Восстанавливаем сохраненные поля, если сессия упала или закрылась
     fields.forEach(fieldId => {
         const el = document.getElementById(fieldId);
         if (el && localStorage.getItem(`zavod_backup_${fieldId}`)) {
             el.value = localStorage.getItem(`zavod_backup_${fieldId}`);
         }
-        // Запоминаем каждый ввод пользователя на лету
+        // Запоминаем каждый символ на лету
         el?.addEventListener('input', () => localStorage.setItem(`zavod_backup_${fieldId}`, el.value));
         el?.addEventListener('change', () => localStorage.setItem(`zavod_backup_${fieldId}`, el.value));
     });
@@ -70,17 +70,16 @@ function initFormWithBackup() {
         });
     }
 
-    // Вывод имени прикрепленного файла
     document.getElementById('fileInput')?.addEventListener('change', function() {
         const preview = document.getElementById('file-name-preview');
-        if (this.files.length > 0) preview.textContent = `📎 Файл добавлен: ${this.files[0].name}`;
+        if (this.files.length > 0) preview.textContent = `📎 Файл прикреплен: ${this.files[0].name}`;
         else preview.textContent = '';
     });
 
     document.getElementById('orderForm')?.addEventListener('submit', handleFormSubmit);
 }
 
-// --- ОТПРАВКА ФОРМЫ, КЛИЕНТСКИЙ ТЕГ И ЗАПИСЬ ---
+// --- ОТПРАВКА ЗАЯВКИ С АКТИВНЫМ ТЕГОМ ЮЗЕРА ---
 async function handleFormSubmit(e) {
     e.preventDefault();
     const submitBtn = document.getElementById('submitBtn');
@@ -93,10 +92,9 @@ async function handleFormSubmit(e) {
     const fileInput = document.getElementById('fileInput');
 
     let selectedName = usernameSelect.value;
-    // Определяем итоговый юзернейм с автоматическим тегом @
     let finalUsername = selectedName === 'Иначе' ? customUsernameInput.value.trim() : (tgUsernames[selectedName] || selectedName);
 
-    // Контроль отправки после 16:00 (только для Ника)
+    // Контроль времени 16:00 (Ник — исключение)
     const currentHour = new Date().getHours();
     const isNik = (finalUsername === '@fyrfyrmoscow' || selectedName === 'Ник');
 
@@ -108,11 +106,11 @@ async function handleFormSubmit(e) {
 
     submitBtn.disabled = true;
     statusMsg.className = "status-msg";
-    statusMsg.textContent = "Синхронизация с глобальным графиком...";
+    statusMsg.textContent = "Синхронизация ТЗ с базой данных...";
 
     const formattedDate = rawDate.split('-').reverse().join('.');
 
-    // 1. ПУШ ДАННЫХ В SUPABASE (в таблицу 'dev table')
+    // 1. ЗАПИСЬ В ОБЛАКО SUPABASE (В ТАБЛИЦУ 'dev table')
     let supabaseSuccess = false;
     try {
         if (supabase) {
@@ -132,15 +130,16 @@ async function handleFormSubmit(e) {
             supabaseSuccess = true;
         }
     } catch (sbError) {
-        console.error("Ошибка сохранения в базу Supabase:", sbError);
+        console.error("Ошибка сохранения в базу:", sbError);
     }
 
-    // 2. ДУБЛИРОВАНИЕ И ТЕГИРОВАНИЕ В TELEGRAM ЧАТ / ЛС
-    const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Техническое задание:**\n${comment}`;
+    // 2. ОТПРАВКА КАРТОЧКИ В TELEGRAM С УВЕДОМЛЕНИЕМ ИСПОЛНИТЕЛЯ
+    const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **Время:** ${duration}\n👤 **Заказчик/Исполнитель:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **ТЗ для исполнителя:**\n${comment}`;
     
     try {
+        let response;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
 
         if (fileInput && fileInput.files.length > 0) {
             const formData = new FormData();
@@ -148,9 +147,9 @@ async function handleFormSubmit(e) {
             formData.append('document', fileInput.files[0]);
             formData.append('caption', messageText);
             formData.append('parse_mode', 'Markdown');
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData, signal: controller.signal });
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData, signal: controller.signal });
         } else {
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText, parse_mode: 'Markdown' }),
@@ -159,15 +158,15 @@ async function handleFormSubmit(e) {
         }
         clearTimeout(timeoutId);
     } catch (tgError) {
-        console.log("Уведомление в Телеграм задерживается, но в базу данные ушли.");
+        console.log("Телеграм провис из-за VPN, но данные в базе зафиксированы.");
     }
 
-    // Результат выполнения операции
+    // Итог
     if (supabaseSuccess) {
         statusMsg.className = "status-msg success";
-        statusMsg.textContent = "✅ Успешно! Коммит добавлен в расписание.";
+        statusMsg.textContent = "✅ Заявка зафиксирована в глобальном графике!";
         
-        // Очищаем резервные черновики, так как форма успешно улетела в базу
+        // Очищаем локальные черновики, раз отправка успешна
         ['duration', 'comment', 'customUsername'].forEach(id => localStorage.removeItem(`zavod_backup_${id}`));
         
         document.getElementById('orderForm').reset();
@@ -176,12 +175,12 @@ async function handleFormSubmit(e) {
         initCalendar();
     } else {
         statusMsg.className = "status-msg error";
-        statusMsg.textContent = "❌ Ошибка записи. Проверьте права доступа таблицы.";
+        statusMsg.textContent = "❌ Ошибка записи. Проверьте подключение к сети.";
     }
     submitBtn.disabled = false;
 }
 
-// --- СКАЧИВАНИЕ И СТРУКТУРИРОВАНИЕ ЗАЯВОК ИЗ БАЗЫ ДАННЫХ ---
+// --- СКАЧИВАНИЕ ГРАФИКА ДЛЯ ВСЕХ УСТРОЙСТВ ---
 async function loadTasksFromSupabase() {
     if (!supabase) return;
     try {
@@ -193,12 +192,12 @@ async function loadTasksFromSupabase() {
         if (error) throw error;
         localTasks = data || [];
     } catch (e) {
-        console.error("Не удалось подтянуть данные с сервера:", e);
+        console.error("Ошибка загрузки расписания:", e);
         localTasks = [];
     }
 }
 
-// --- СТРОГАЯ ОТРИСОВКА КАРТОЧЕК В ИНТЕРФЕЙСЕ РАСПИСАНИЯ ---
+// --- ПРИМИТИВНАЯ ОТРИСОВКА ГРАФИКА СВЕРХУ ВНИЗ ---
 function renderTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -220,11 +219,10 @@ function renderTasks(period) {
     }
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p class="no-tasks">На этот период заявок не запланировано</p>';
+        container.innerHTML = '<p class="no-tasks">График пуст на выбранный период</p>';
         return;
     }
 
-    // Генерируем адаптивные индастриал-карточки задач
     filtered.forEach(task => {
         const item = document.createElement('div');
         item.className = 'task-item';
