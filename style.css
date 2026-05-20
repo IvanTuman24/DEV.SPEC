@@ -33,7 +33,7 @@ button[type="submit"]:disabled { background-color: #27272a; color: #71717a; curs
 .status-msg.success { color: #2ecc71; }
 .status-msg.error { color: #e74c3c; }
 
-/* КНОПКИ И КАРТОЧКИ ДЛЯ СТРАНИЦЫ АДМИНКИ */
+/* КНОПКИ И КАРТОЧКИ ДЛЯ СТРАНИЦЫ РАСПИСАНИЯ */
 .admin-section { display: flex; flex-direction: column; gap: 20px; }
 .admin-header { display: flex; justify-content: center; margin-bottom: 10px; }
 .filter-buttons { display: flex; gap: 6px; background: #1d1d22; padding: 4px; border-radius: 8px; border: 1px solid #27272a; width: 100%; }
