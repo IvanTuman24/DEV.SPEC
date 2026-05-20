@@ -1,11 +1,11 @@
+// НАСТРОЙКИ ОБЛАЧНОЙ БАЗЫ ДАННЫХ ZAVOD
+const SUPABASE_URL = "https://hbktkdkhkcelrhelnpqw.supabase.co"; 
+const SUPABASE_KEY = "sb_publishable_Jm_YEe7bOO3Q8m5nXIHbFw_fgtjlBAf";
+
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// --- ДАННЫЕ ТВОЕЙ БАЗЫ SUPABASE ---
-const SUPABASE_URL = "ВСТАВЬ_СЮДА_PROJECT_URL"; 
-const SUPABASE_KEY = "ВСТАВЬ_СЮДА_ANON_PUBLIC_KEY";
-
-// Инициализируем клиента базы данных глобально
+// Инициализация подключения к базе
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 const tgUsernames = {
@@ -33,11 +33,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 });
 
-// --- СИНХРОНИЗАЦИЯ С ОБЛАКОМ SUPABASE ---
+// --- СКАЧИВАНИЕ ДАННЫХ ИЗ ГЛОБАЛЬНОЙ БАЗЫ ---
 async function loadTasksFromSupabase() {
     if (!supabase) return;
     try {
-        // Запрашиваем данные из таблицы tasks, сортируем по свежести
         const { data, error } = await supabase
             .from('tasks')
             .select('*')
@@ -51,7 +50,7 @@ async function loadTasksFromSupabase() {
     }
 }
 
-// --- ОТРИСОВКА ГРАФИКА ЗАДАЧ ---
+// --- ОТРИСОВКА КАРТОЧЕК В РАСПИСАНИИ ---
 function renderTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -113,7 +112,7 @@ function getFormattedDate(daysOffset) {
     return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-// --- ЛОГИКА ФОРМЫ ЗАЯВОК ---
+// --- ЛОГИКА РАБОТЫ С ФОРМОЙ ---
 function initCalendar() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
@@ -181,12 +180,13 @@ function initFormLogic() {
 
             submitBtn.disabled = true;
             statusMsg.className = "status-msg";
-            statusMsg.textContent = "Синхронизация с глобальным графиком...";
+            statusMsg.textContent = "Внесение ТЗ в общую базу...";
 
             const formattedDate = rawDate.split('-').reverse().join('.');
 
+            // 1. ОТПРАВЛЯЕМ ЗАДАЧУ В SUPABASE
+            let supabaseSuccess = false;
             try {
-                // 1. Мгновенная запись напрямую в глобальную базу Supabase
                 if (supabase) {
                     const { error } = await supabase
                         .from('tasks')
@@ -201,14 +201,19 @@ function initFormLogic() {
                             }
                         ]);
                     if (error) throw error;
+                    supabaseSuccess = true;
                 }
+            } catch (sbError) {
+                console.error("Ошибка сохранения в базу Supabase:", sbError);
+            }
 
-                // 2. Дублирование уведомления тебе в Telegram
-                const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Задача и ТЗ:**\n${comment}`;
-                
+            // 2. ДУБЛИРУЕМ ТЕКСТ В TELEGRAM
+            const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Задача и ТЗ:**\n${comment}`;
+            
+            try {
                 let response;
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                const timeoutId = setTimeout(() => controller.abort(), 7000); // Тайм-аут 7 секунд
 
                 if (fileInput && fileInput.files.length > 0) {
                     const formData = new FormData();
@@ -225,24 +230,24 @@ function initFormLogic() {
                         signal: controller.signal
                     });
                 }
-
                 clearTimeout(timeoutId);
+            } catch (tgError) {
+                console.log("Телеграм не ответил вовремя (скорее всего, выключен VPN), но база сохранена.");
+            }
 
+            // Итоговый результат операции
+            if (supabaseSuccess) {
                 statusMsg.className = "status-msg success";
                 statusMsg.textContent = "✅ Задача занесена в глобальный график расписания!";
                 orderForm.reset();
                 if (document.getElementById('file-name-preview')) document.getElementById('file-name-preview').textContent = '';
                 customUsernameInput.style.display = 'none';
                 initCalendar();
-
-            } catch (error) {
-                console.error(error);
-                // Если Telegram не ответил (нет VPN), но в Supabase записалось — это всё равно успех!
-                statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Внесено в общий график! (ТГ-уведомление задерживается из-за VPN).";
-            } finally {
-                submitBtn.disabled = false;
+            } else {
+                statusMsg.className = "status-msg error";
+                statusMsg.textContent = "❌ Ошибка записи. Проверь, отключен ли RLS в настройках Supabase для таблицы tasks.";
             }
+            submitBtn.disabled = false;
         });
     }
 }
