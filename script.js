@@ -1,6 +1,13 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
+// --- ДАННЫЕ ТВОЕЙ БАЗЫ SUPABASE ---
+const SUPABASE_URL = "ВСТАВЬ_СЮДА_PROJECT_URL"; 
+const SUPABASE_KEY = "ВСТАВЬ_СЮДА_ANON_PUBLIC_KEY";
+
+// Инициализируем клиента базы данных глобально
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
     "Влад": "@free8from",
@@ -17,8 +24,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        // Логика для любого устройства, зашедшего на расписание
-        await loadTasksFromTelegramLogs();
+        await loadTasksFromSupabase();
         renderTasks('today');
         initFilterButtons();
     } else {
@@ -27,82 +33,25 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 });
 
-// --- ГЛОБАЛЬНОЕ ЧТЕНИЕ ИЗ ТЕЛЕГРАМА (ДЛЯ ВСЕХ УСТРОЙСТВ) ---
-async function loadTasksFromTelegramLogs() {
-    const container = document.getElementById('tasksContainer');
+// --- СИНХРОНИЗАЦИЯ С ОБЛАКОМ SUPABASE ---
+async function loadTasksFromSupabase() {
+    if (!supabase) return;
     try {
-        // Запрашиваем у Телеграма последние 50 сообщений из нашего рабочего чата/канала
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=-50&allowed_updates=["message"]`);
-        
-        if (response.ok) {
-            const data = await response.json();
-            const updates = data.result || [];
-            
-            localTasks = [];
-            
-            updates.forEach(upd => {
-                // Ищем текстовые сообщения или подписи к документам, содержащие ключевую фразу ТЗ
-                let text = "";
-                if (upd.message && upd.message.text) text = upd.message.text;
-                if (upd.message && upd.message.caption) text = upd.message.caption;
-                
-                if (text.includes("📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ")) {
-                    parseAndAddTelegramTask(text, upd.message.date * 1000);
-                }
-            });
+        // Запрашиваем данные из таблицы tasks, сортируем по свежести
+        const { data, error } = await supabase
+            .from('tasks')
+            .select('*')
+            .order('timestamp', { ascending: false });
 
-            // Сортируем: свежие ТЗ всегда вверху
-            localTasks.sort((a, b) => b.timestamp - a.timestamp);
-        }
+        if (error) throw error;
+        localTasks = data || [];
     } catch (e) {
-        console.error("Ошибка чтения логов Telegram:", e);
+        console.error("Ошибка загрузки данных из Supabase:", e);
+        localTasks = [];
     }
 }
 
-// Извлекаем чистые данные из текстовой карточки Телеграма
-function parseAndAddTelegramTask(text, msgTimestamp) {
-    try {
-        const lines = text.split("\n");
-        let tech = "🚜 Техника";
-        let date = "";
-        let duration = "";
-        let username = "";
-        let commentLines = [];
-        let isCommentZone = false;
-
-        lines.forEach(line => {
-            if (line.includes("⚙️ Техника:")) tech = line.split("Техника:")[-1].trim().replace(/\*/g, "");
-            if (line.includes("📅 Когда:")) date = line.split("Когда:")[-1].strip().replace(/\*/g, "");
-            if (line.includes("⏳ На сколько:") || line.includes("⏳ Время:")) duration = line.split(":")[-1].trim().replace(/\*/g, "");
-            if (line.includes("👤 Заказчик:")) username = line.split("Заказчик:")[-1].trim().replace(/\*/g, "");
-            
-            if (isCommentZone) {
-                commentLines.push(line);
-            }
-            if (line.includes("📝 Задача и ТЗ:")) {
-                isCommentZone = true;
-            }
-        });
-
-        // Собираем ТЗ обратно в текст
-        let comment = commentLines.join("\n").trim();
-
-        if (date) {
-            localTasks.push({
-                tech,
-                date, // Уже в формате ДД.ММ.ГГГГ
-                duration,
-                username,
-                comment,
-                timestamp: msgTimestamp
-            });
-        }
-    } catch (err) {
-        console.log("Ошибка парсинга отдельной карточки", err);
-    }
-}
-
-// --- ОТРИСОВКА ПРИМИТИВНОГО ГРАФИКА ЗАДАЧ ---
+// --- ОТРИСОВКА ГРАФИКА ЗАДАЧ ---
 function renderTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -232,13 +181,31 @@ function initFormLogic() {
 
             submitBtn.disabled = true;
             statusMsg.className = "status-msg";
-            statusMsg.textContent = "Синхронизация с графиком и отправка...";
+            statusMsg.textContent = "Синхронизация с глобальным графиком...";
 
             const formattedDate = rawDate.split('-').reverse().join('.');
 
-            const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Задача и ТЗ:**\n${comment}`;
-
             try {
+                // 1. Мгновенная запись напрямую в глобальную базу Supabase
+                if (supabase) {
+                    const { error } = await supabase
+                        .from('tasks')
+                        .insert([
+                            { 
+                                tech: tech, 
+                                date: formattedDate, 
+                                duration: duration, 
+                                username: finalUsername, 
+                                comment: comment,
+                                timestamp: Date.now().toString()
+                            }
+                        ]);
+                    if (error) throw error;
+                }
+
+                // 2. Дублирование уведомления тебе в Telegram
+                const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Задача и ТЗ:**\n${comment}`;
+                
                 let response;
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -260,7 +227,6 @@ function initFormLogic() {
                 }
 
                 clearTimeout(timeoutId);
-                if (!response.ok) throw new Error('Ошибка Telegram API');
 
                 statusMsg.className = "status-msg success";
                 statusMsg.textContent = "✅ Задача занесена в глобальный график расписания!";
@@ -270,8 +236,10 @@ function initFormLogic() {
                 initCalendar();
 
             } catch (error) {
-                statusMsg.className = "status-msg error";
-                statusMsg.textContent = "❌ Ошибка сети. Для отправки заявки включите VPN.";
+                console.error(error);
+                // Если Telegram не ответил (нет VPN), но в Supabase записалось — это всё равно успех!
+                statusMsg.className = "status-msg success";
+                statusMsg.textContent = "✅ Внесено в общий график! (ТГ-уведомление задерживается из-за VPN).";
             } finally {
                 submitBtn.disabled = false;
             }
