@@ -1,10 +1,12 @@
+// НАСТРОЙКИ ОБЛАЧНОЙ БАЗЫ ДАННЫХ ZAVOD
+const SUPABASE_URL = "https://hbktkdkhkcelrhelnpqw.supabase.co"; 
+const SUPABASE_KEY = "sb_publishable_Jm_YEe7bOO3Q8m5nXIHbFw_fgtjlBAf";
+
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// Глобальный отказоустойчивый репозиторий данных (работает на всех устройствах)
-const BIN_ID = "657ed926dc746540188448b1"; 
-const GLOBAL_DB_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-const MASTER_KEY = "$2a$10$X86Z9967N4XG97b7K89B7Oux9T7mEunpPqgKx2wzG5kX1v52WmuX6"; // Публичный мастер-ключ для чтения/записи
+// Инициализация подключения к базе данных Supabase
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
@@ -22,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        await loadTasksFromGlobalCloud();
+        await loadTasksFromSupabase();
         renderTasks('today');
         initFilterButtons();
     } else {
@@ -31,42 +33,24 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 });
 
-// --- СИНХРОНИЗАЦИЯ С ГЛОБАЛЬНЫМ ХРАНИЛИЩЕМ (БЕЗ CORS ОШИБОК) ---
-async function loadTasksFromGlobalCloud() {
+// --- СКАЧИВАНИЕ ДАННЫХ ИЗ ГЛОБАЛЬНОЙ БАЗЫ ---
+async function loadTasksFromSupabase() {
+    if (!supabase) return;
     try {
-        const response = await fetch(`${GLOBAL_DB_URL}/latest`, {
-            method: 'GET',
-            headers: { 'X-Master-Key': MASTER_KEY }
-        });
-        if (response.ok) {
-            const resData = await response.json();
-            localTasks = resData.record.tasks || [];
-            localTasks.sort((a, b) => b.timestamp - a.timestamp);
-        } else {
-            localTasks = [];
-        }
+        const { data, error } = await supabase
+            .from('dev table')
+            .select('*')
+            .order('timestamp', { ascending: false });
+
+        if (error) throw error;
+        localTasks = data || [];
     } catch (e) {
-        console.log("Ошибка загрузки глобального расписания:", e);
+        console.error("Ошибка загрузки данных из Supabase:", e);
         localTasks = [];
     }
 }
 
-async function saveTasksToGlobalCloud() {
-    try {
-        await fetch(GLOBAL_DB_URL, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': MASTER_KEY
-            },
-            body: JSON.stringify({ tasks: localTasks })
-        });
-    } catch (e) {
-        console.error("Ошибка сохранения в облако:", e);
-    }
-}
-
-// --- ОТРИСОВКА ГРАФИКА ЗАДАЧ ---
+// --- ОТРИСОВКА КАРТОЧЕК В РАСПИСАНИИ ---
 function renderTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -128,7 +112,7 @@ function getFormattedDate(daysOffset) {
     return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-// --- ЛОГИКА ФОРМЫ ЗАЯВОК ---
+// --- ЛОГИКА РАБОТЫ С ФОРМОЙ ---
 function initCalendar() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
@@ -196,62 +180,73 @@ function initFormLogic() {
 
             submitBtn.disabled = true;
             statusMsg.className = "status-msg";
-            statusMsg.textContent = "Синхронизация с глобальным графиком...";
+            statusMsg.textContent = "Внесение ТЗ в общую базу...";
 
             const formattedDate = rawDate.split('-').reverse().join('.');
 
-            // Скачиваем актуальный массив со всех устройств, добавляем задачу, отправляем обратно
-            await loadTasksFromGlobalCloud();
-            
-            const newTask = {
-                tech,
-                date: formattedDate,
-                duration,
-                username: finalUsername,
-                comment,
-                timestamp: Date.now()
-            };
-            localTasks.push(newTask);
-            
-            await saveTasksToGlobalCloud();
+            // 1. ОТПРАВЛЯЕМ ЗАДАЧУ В SUPABASE (в таблицу dev table)
+            let supabaseSuccess = false;
+            try {
+                if (supabase) {
+                    const { error } = await supabase
+                        .from('dev table')
+                        .insert([
+                            { 
+                                tech: tech, 
+                                date: formattedDate, 
+                                duration: duration, 
+                                username: finalUsername, 
+                                comment: comment,
+                                timestamp: Date.now().toString()
+                            }
+                        ]);
+                    if (error) throw error;
+                    supabaseSuccess = true;
+                }
+            } catch (sbError) {
+                console.error("Ошибка сохранения в базу Supabase:", sbError);
+            }
 
-            const messageText = `📋 НОВАЯ ЗАЯВКА НА ТЕХНИКУ\n━━━━━━━━━━━━━━━\n⚙️ Техника: ${tech}\n📅 Когда: ${formattedDate}\n⏳ Время: ${duration}\n👤 Заказчик: ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 ТЗ сохранено в общий график.`;
-
+            // 2. ДУБЛИРУЕМ ТЕКСТ В TELEGRAM
+            const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **На сколько:** ${duration}\n👤 **Заказчик:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Задача и ТЗ:**\n${comment}`;
+            
             try {
                 let response;
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                const timeoutId = setTimeout(() => controller.abort(), 7000);
 
                 if (fileInput && fileInput.files.length > 0) {
                     const formData = new FormData();
                     formData.append('chat_id', ADMIN_ID);
                     formData.append('document', fileInput.files[0]);
                     formData.append('caption', messageText);
+                    formData.append('parse_mode', 'Markdown');
                     response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData, signal: controller.signal });
                 } else {
                     response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText }),
+                        body: JSON.stringify({ chat_id: ADMIN_ID, text: messageText, parse_mode: 'Markdown' }),
                         signal: controller.signal
                     });
                 }
-
                 clearTimeout(timeoutId);
+            } catch (tgError) {
+                console.log("Телеграм задерживается, но в базу данные ушли.");
+            }
 
+            if (supabaseSuccess) {
                 statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Задача занесена в общий график расписания!";
+                statusMsg.textContent = "✅ Задача занесена в глобальный график расписания!";
                 orderForm.reset();
                 if (document.getElementById('file-name-preview')) document.getElementById('file-name-preview').textContent = '';
                 customUsernameInput.style.display = 'none';
                 initCalendar();
-
-            } catch (error) {
-                statusMsg.className = "status-msg success";
-                statusMsg.textContent = "✅ Внесено в общий график на сайте! (Уведомление в ТГ задерживается, включите VPN).";
-            } finally {
-                submitBtn.disabled = false;
+            } else {
+                statusMsg.className = "status-msg error";
+                statusMsg.textContent = "❌ Ошибка записи. Убедитесь, что в SQL Editor применились настройки анонимного доступа.";
             }
+            submitBtn.disabled = false;
         });
     }
 }
