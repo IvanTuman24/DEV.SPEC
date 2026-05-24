@@ -2,31 +2,92 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ТЕХНИКА — График расписания</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТЕХНИКА — Отправка ТЗ</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="app-container">
     <header class="main-header">
-        <h1>ГРАФИК РАСПИСАНИЯ</h1>
-        <p class="subtitle">актуальный глобальный тайминг задач</p>
+        <h1>ТЕХНИКА</h1>
+        <p class="subtitle">формирование technical-задания для исполнителей</p>
     </header>
 
-    <section class="admin-section">
-        <div class="admin-header">
-            <div class="filter-buttons">
-                <button class="filter-btn active" data-period="today">СЕГОДНЯ</button>
-                <button class="filter-btn" data-period="tomorrow">ЗАВТРА</button>
-                <button class="filter-btn" data-period="week">НЕДЕЛЯ</button>
+    <main class="form-wrapper">
+        <form id="orderForm">
+            <div class="form-group">
+                <label class="group-title">1. ТЕХНИКА</label>
+                <div class="tech-grid">
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🚜 Трактор" checked>
+                        <div class="card-content">
+                            <span class="icon">🚜</span>
+                            <span class="title">Трактор</span>
+                        </div>
+                    </label>
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🏗 Манипулятор">
+                        <div class="card-content">
+                            <span class="icon">🏗</span>
+                            <span class="title">Манипулятор</span>
+                        </div>
+                    </label>
+                    <label class="tech-card">
+                        <input type="radio" name="tech" value="🛠 Мейкер">
+                        <div class="card-content">
+                            <span class="icon">🛠</span>
+                            <span class="title">Мейкер</span>
+                        </div>
+                    </label>
+                </div>
             </div>
-        </div>
-        
-        <div id="tasksContainer" class="tasks-container">
-            <p class="no-tasks">Синхронизация глобального расписания...</p>
-        </div>
-    </section>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="date">2. КОГДА</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+                <div class="form-group half">
+                    <label for="duration">3. НА СКОЛЬКО (ВРЕМЯ)</label>
+                    <input type="text" id="duration" name="duration" placeholder="Например: 5 часов" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="usernameSelect">4. ЗАКАЗЧИК</label>
+                <select id="usernameSelect" required>
+                    <option value="" disabled selected>Выберите из списка...</option>
+                    <option value="Женя Борода">Женя Борода</option>
+                    <option value="Влад">Влад</option>
+                    <option value="Ник">Ник</option>
+                    <option value="Никита">Никита</option>
+                    <option value="Алёна Грибова">Алёна Грибова</option>
+                    <option value="Нася You">Нася You</option>
+                    <option value="Натали">Натали</option>
+                    <option value="Иначе">Иначе...</option>
+                </select>
+                <input type="text" id="customUsername" class="hidden-input" placeholder="Введите имя вручную">
+            </div>
+
+            <div class="form-group">
+                <label for="comment">5. КОММЕНТАРИЙ И ТЗ</label>
+                <textarea id="comment" name="comment" placeholder="Подробно опишите задачу, локацию и нюансы работы..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="file-label">6. ПРИКРЕПИТЬ ФАЙЛ</label>
+                <div class="file-upload-zone">
+                    <input type="file" id="fileInput" name="fileInput">
+                    <span class="file-custom-text">Выбрать файл на устройстве</span>
+                </div>
+                <div id="file-name-preview" class="file-preview-text"></div>
+            </div>
+
+            <button type="submit" id="submitBtn">ОТПРАВИТЬ ЗАЯВКУ</button>
+            <div id="statusMessage" class="status-msg"></div>
+        </form>
+    </main>
 </div>
 
 <script src="script.js"></script>
