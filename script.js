@@ -2,8 +2,8 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// База данных расписания (Резервный распределенный сетевой JSON-хостинг, которому вообще не нужен VPN для работы)
-const BACKUP_DB_URL = "https://api.jsonbin.io/v3/b/657ed926dc746540188448b1";
+// Облачная база данных расписания (работает на всех устройствах БЕЗ VPN)
+const SCHEDULE_DB_URL = "https://api.jsonbin.io/v3/b/657ed926dc746540188448b1";
 const MASTER_KEY = "$2a$10$X86Z9967N4XG97b7K89B7Oux9T7mEunpPqgKx2wzG5kX1v52WmuX6";
 
 // Справочник Telegram-аккаунтов для автоматического тегирования исполнителей в ТЗ
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        // Оптимизированная логика рендеринга графика для всех мобильных и ПК устройств
+        // Логика рендеринга структурированного графика на отдельной админ-странице
         await loadGlobalSchedule();
         renderPrimitiveTasks('today');
         initFilterButtons();
@@ -71,13 +71,13 @@ function initFormWithBackup() {
     // Обработка превью прикрепляемого файла
     document.getElementById('fileInput')?.addEventListener('change', function() {
         const preview = document.getElementById('file-name-preview');
-        if (this.files.length > 0) preview.textContent = `📎 Файл прикреплен сообщением: ${this.files[0].name}`;
+        if (this.files.length > 0) preview.textContent = `📎 Файл готов: ${this.files[0].name}`;
     });
 
     document.getElementById('orderForm')?.addEventListener('submit', handleFormSubmit);
 }
 
-// --- ОТПРАВКА ЗАЯВКИ ПРИКРЕПЛЕННЫМ СООБЩЕНИЕМ С ТЕГОМ ЮЗЕРА ---
+// --- ОТПРАВКА ЗАЯВКИ С ТЕГОМ ЮЗЕРА ЧЕРЕЗ TELEGRAM И ЗАПИСЬ В ГРАФИК ---
 async function handleFormSubmit(e) {
     e.preventDefault();
     const submitBtn = document.getElementById('submitBtn');
@@ -90,7 +90,7 @@ async function handleFormSubmit(e) {
     const fileInput = document.getElementById('fileInput');
 
     let selectedName = usernameSelect.value;
-    // Подставляем активный тег @ из справочника
+    // Подставляем активный тег @ из справочника команд
     let finalUsername = selectedName === 'Иначе' ? customUsernameInput.value.trim() : (tgUsernames[selectedName] || selectedName);
 
     // Контроль жесткого дедлайна в 16:00 (Ник — исключение)
@@ -105,17 +105,17 @@ async function handleFormSubmit(e) {
 
     submitBtn.disabled = true;
     statusMsg.className = "status-msg";
-    statusMsg.textContent = "Генерация ТЗ и запись в график...";
+    statusMsg.textContent = "Внесение ТЗ в график расписания...";
 
     const formattedDate = rawDate.split('-').reverse().join('.');
 
-    // 1. АВТОНОМНОЕ СОХРАНЕНИЕ ДАННЫХ ДЛЯ СТРАНИЦЫ ГРАФИКА
+    // 1. СОХРАНЕНИЕ ДАННЫХ В ОБЛАКО ДЛЯ СТРАНИЦЫ АДМИНА
     await loadGlobalSchedule();
     const newTask = { tech, date: formattedDate, duration, username: finalUsername, comment, timestamp: Date.now() };
     globalTasks.push(newTask);
     await saveGlobalSchedule();
 
-    // 2. ОТПРАВКА СТРУКТУРИРОВАННОГО ТЗ ПРИКРЕПЛЕННЫМ СООБЩЕНИЕМ В TELEGRAM ЧАТ
+    // 2. ОТПРАВКА СТРУКТУРИРОВАННОГО ТЗ СООБЩЕНИЕМ В TELEGRAM ЧАТ
     const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **Время:** ${duration}\n👤 **Заказчик/Исполнитель:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Техническое задание:**\n${comment}`;
 
     try {
@@ -135,7 +135,7 @@ async function handleFormSubmit(e) {
         }
 
         statusMsg.className = "status-msg success";
-        statusMsg.textContent = "✅ Заявка занесена в глобальный график и отправлена юзеру!";
+        statusMsg.textContent = "✅ Заявка улетела в график и ТГ исполнителя!";
         
         // Очищаем локальные черновики бэкапа, так как отправка прошла успешно
         ['duration', 'comment', 'customUsername'].forEach(id => localStorage.removeItem(`zavod_form_backup_${id}`));
@@ -144,7 +144,7 @@ async function handleFormSubmit(e) {
         initCalendar();
 
     } catch (error) {
-        // Если у пользователя завис VPN, заявка всё равно железно сохранится в графике расписания на сайте!
+        // Если у пользователя провис VPN, заявка всё равно железно отобразится в графике расписания на сайте!
         statusMsg.className = "status-msg success";
         statusMsg.textContent = "✅ В график расписания добавлено! (Телеграм провис без VPN).";
     } finally {
@@ -152,10 +152,10 @@ async function handleFormSubmit(e) {
     }
 }
 
-// --- СЕТЕВАЯ СИНХРОНИЗАЦИЯ ГРАФИКА РАСПИСАНИЯ ДЛЯ ВСЕХ УСТРОЙСТВ ---
+// --- СИНХРОНИЗАЦИЯ СЕТЕВОГО РАСПИСАНИЯ ДЛЯ ВСЕХ УСТРОЙСТВ ---
 async function loadGlobalSchedule() {
     try {
-        const response = await fetch(`${BACKUP_DB_URL}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } });
+        const response = await fetch(`${SCHEDULE_DB_URL}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } });
         if (response.ok) {
             const data = await response.json();
             globalTasks = data.record.tasks || [];
@@ -168,17 +168,17 @@ async function loadGlobalSchedule() {
 
 async function saveGlobalSchedule() {
     try {
-        await fetch(BACKUP_DB_URL, {
+        await fetch(SCHEDULE_DB_URL, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
             body: JSON.stringify({ tasks: globalTasks })
         });
     } catch (e) {
-        console.error("Сбой сети обновления графика", e);
+        console.error("Сбой обновления графика", e);
     }
 }
 
-// --- УЛЬТРА-ОПТИМИЗИРОВАННЫЙ ВЫВОД КАРТОЧЕК В РАСПИСАНИИ ---
+// --- СТРУКТУРИРОВАННЫЙ ВЫВОД КАРТОЧЕК В РАСПИСАНИИ ---
 function renderPrimitiveTasks(period) {
     const container = document.getElementById('tasksContainer');
     if (!container) return;
@@ -209,7 +209,7 @@ function renderPrimitiveTasks(period) {
                 <span class="task-item-tech">${task.tech}</span>
                 <span class="task-item-user">${task.username}</span>
             </div>
-            <div class="task-item-duration">📅 Дата: ${task.date} (${task.duration})</div>
+            <div class="task-item-duration">⏳ Срок: ${task.date} — ${task.duration}</div>
             <div class="task-item-comment">${task.comment}</div>
         `;
         container.appendChild(item);
