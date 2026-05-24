@@ -1,7 +1,7 @@
 const BOT_TOKEN = "7918430423:AAFPKEfOzZqmggP6nRMNZIPxG_ivXi4y41U";
 const ADMIN_ID = "702501770";
 
-// Справочник Telegram-аккаунтов для автоматического тегирования исполнителей в ТЗ
+// Справочник Telegram-аккаунтов для автоматического тегирования исполнителей
 const tgUsernames = {
     "Женя Борода": "@Happiness091",
     "Влад": "@free8from",
@@ -16,9 +16,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const isAdminPage = window.location.pathname.includes('admin.html');
 
     if (isAdminPage) {
-        renderLocalTasks('today');
-        initFilterButtons();
+        // Загрузка глобального расписания для всей команды
+        loadGlobalSchedule();
     } else {
+        // Логика формы заказа
         initCalendar();
         initFormWithBackup();
     }
@@ -28,13 +29,11 @@ document.addEventListener("DOMContentLoaded", function() {
 function initFormWithBackup() {
     const fields = ['duration', 'usernameSelect', 'comment', 'customUsername'];
     
-    // Восстанавливаем данные из локального кэша смартфона после перезагрузки или сбоя
     fields.forEach(fieldId => {
         const el = document.getElementById(fieldId);
         if (el && localStorage.getItem(`zavod_backup_${fieldId}`)) {
             el.value = localStorage.getItem(`zavod_backup_${fieldId}`);
         }
-        // Запоминаем каждое изменение на лету
         el?.addEventListener('input', () => localStorage.setItem(`zavod_backup_${fieldId}`, el.value));
         el?.addEventListener('change', () => localStorage.setItem(`zavod_backup_${fieldId}`, el.value));
     });
@@ -58,7 +57,6 @@ function initFormWithBackup() {
         });
     }
 
-    // Обработка превью прикрепляемого файла
     document.getElementById('fileInput')?.addEventListener('change', function() {
         const preview = document.getElementById('file-name-preview');
         if (this.files.length > 0) preview.textContent = `📎 Файл прикреплен сообщением: ${this.files[0].name}`;
@@ -82,7 +80,7 @@ async function handleFormSubmit(e) {
     let selectedName = usernameSelect.value;
     let finalUsername = selectedName === 'Иначе' ? customUsernameInput.value.trim() : (tgUsernames[selectedName] || selectedName);
 
-    // Контроль жесткого дедлайна в 16:00 (Ник — исключение)
+    // Контроль дедлайна в 16:00
     const currentHour = new Date().getHours();
     const isNik = (finalUsername === '@fyrfyrmoscow' || selectedName === 'Ник');
 
@@ -94,18 +92,12 @@ async function handleFormSubmit(e) {
 
     submitBtn.disabled = true;
     statusMsg.className = "status-msg";
-    statusMsg.textContent = "Формирование ТЗ и отправка в Telegram...";
+    statusMsg.textContent = "Публикация ТЗ в глобальный график...";
 
     const formattedDate = rawDate.split('-').reverse().join('.');
 
-    // Сохраняем задачу локально для текущего устройства
-    const newTask = { tech, date: formattedDate, duration, username: finalUsername, comment, timestamp: Date.now() };
-    let localSchedule = JSON.parse(localStorage.getItem('zavod_local_schedule') || '[]');
-    localSchedule.push(newTask);
-    localStorage.setItem('zavod_local_schedule', JSON.stringify(localSchedule));
-
-    // Сборка текста ТЗ с автоматическим тегом исполнителя
-    const messageText = `📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **Время:** ${duration}\n👤 **Заказчик/Исполнитель:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Техническое задание:**\n${comment}`;
+    // Маркер-тег в начале, чтобы страница админа понимала, что это именно заявка
+    const messageText = `#ZAVOD_TASK\n📋 **НОВАЯ ЗАЯВКА НА ТЕХНИКУ**\n━━━━━━━━━━━━━━━\n⚙️ **Техника:** ${tech}\n📅 **Когда:** ${formattedDate}\n⏳ **Время:** ${duration}\n👤 **Заказчик/Исполнитель:** ${finalUsername}\n━━━━━━━━━━━━━━━\n📝 **Техническое задание:**\n${comment}`;
 
     try {
         let response;
@@ -126,49 +118,95 @@ async function handleFormSubmit(e) {
 
         if (response.ok) {
             statusMsg.className = "status-msg success";
-            statusMsg.textContent = "✅ Заявка улетела исполнителю в Telegram!";
+            statusMsg.textContent = "✅ Заявка улетела в общий график!";
             
-            // Очищаем черновики после успешного улета
             ['duration', 'comment', 'customUsername'].forEach(id => localStorage.removeItem(`zavod_backup_${id}`));
             document.getElementById('orderForm').reset();
             if (document.getElementById('file-name-preview')) document.getElementById('file-name-preview').textContent = '';
             initCalendar();
         } else {
-            throw new Error("Ошибка сервера Telegram");
+            throw new Error();
         }
-
     } catch (error) {
         statusMsg.className = "status-msg error";
-        statusMsg.textContent = "❌ Ошибка сети. Проверь VPN или подключение к интернету.";
+        statusMsg.textContent = "❌ Ошибка сети. Для отправки в Телеграм включи VPN.";
     } finally {
         submitBtn.disabled = false;
     }
 }
 
-// --- ОТРИСОВКА КАРТОЧЕК В РАСПИСАНИИ ---
-function renderLocalTasks(period) {
+// --- ЧТЕНИЕ ГЛОБАЛЬНОГО ГРАФИКА ИЗ ТЕЛЕГРАМА ДЛЯ ВСЕХ УСТРОЙСТВ ---
+async function loadGlobalSchedule() {
     const container = document.getElementById('tasksContainer');
-    if (!container) return;
+    try {
+        // Запрашиваем историю обновлений бота (последние 100 сообщений)
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?limit=100&allowed_updates=["message"]`);
+        if (!response.ok) throw new Error();
+        
+        const data = await response.json();
+        let updates = data.result || [];
+        
+        let globalTasks = [];
+
+        updates.forEach(u => {
+            let msg = u.message || u.channel_post;
+            if (!msg) return;
+            
+            let text = msg.text || msg.caption || "";
+            
+            // Фильтруем только сообщения нашего сервиса задач
+            if (text.includes('#ZAVOD_TASK')) {
+                // Парсим текст регулярными выражениями, вытаскивая чистые данные для карточек
+                let techMatch = text.match(/⚙️ \*\*Техника:\*\* (.+)/);
+                let dateMatch = text.match(/📅 \*\*Когда:\*\* (.+)/);
+                let durationMatch = text.match(/⏳ \*\*Время:\*\* (.+)/);
+                let userMatch = text.match(/👤 \*\*Заказчик\/Исполнитель:\*\* (.+)/);
+                let commentMatch = text.match(/📝 \*\*Техническое задание:\*\*\n([\s\S]+)/);
+
+                if (techMatch && dateMatch) {
+                    globalTasks.push({
+                        tech: techMatch[1].trim(),
+                        date: dateMatch[1].trim(),
+                        duration: durationMatch ? durationMatch[1].trim() : "",
+                        username: userMatch ? userMatch[1].trim() : "Не указан",
+                        comment: commentMatch ? commentMatch[1].trim() : "",
+                        timestamp: msg.date * 1000
+                    });
+                }
+            }
+        });
+
+        // Сортируем: свежие сверху
+        globalTasks.sort((a, b) => b.timestamp - a.timestamp);
+        window.zavodGlobalTasks = globalTasks;
+
+        // Рендерим дефолтную вкладку "Сегодня"
+        renderPrimitiveTasks('today');
+
+    } catch (e) {
+        if (container) container.innerHTML = '<p class="no-tasks">⚠️ Ошибка синхронизации глобального графика. Попробуй включить VPN.</p>';
+    }
+}
+
+function renderPrimitiveTasks(period) {
+    const container = document.getElementById('tasksContainer');
+    if (!container || !window.zavodGlobalTasks) return;
     container.innerHTML = '';
 
     const todayStr = getFormattedDate(0);
     const tomorrowStr = getFormattedDate(1);
-    
-    let localSchedule = JSON.parse(localStorage.getItem('zavod_local_schedule') || '[]');
-    localSchedule.sort((a, b) => b.timestamp - a.timestamp);
-    
     let filtered = [];
 
-    if (period === 'today') filtered = localSchedule.filter(t => t.date === todayStr);
-    else if (period === 'tomorrow') filtered = localSchedule.filter(t => t.date === tomorrowStr);
+    if (period === 'today') filtered = window.zavodGlobalTasks.filter(t => t.date === todayStr);
+    else if (period === 'tomorrow') filtered = window.zavodGlobalTasks.filter(t => t.date === tomorrowStr);
     else if (period === 'week') {
         const weekDates = [];
         for(let i = 0; i < 7; i++) weekDates.push(getFormattedDate(i));
-        filtered = localSchedule.filter(t => weekDates.includes(t.date));
+        filtered = window.zavodGlobalTasks.filter(t => weekDates.includes(t.date));
     }
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p class="no-tasks">В графике нет запланированных задач на этот период</p>';
+        container.innerHTML = '<p class="no-tasks">На этот период в глобальном графике нет задач</p>';
         return;
     }
 
@@ -180,7 +218,7 @@ function renderLocalTasks(period) {
                 <span class="task-item-tech">${task.tech}</span>
                 <span class="task-item-user">${task.username}</span>
             </div>
-            <div class="task-item-duration">📅 Дата: ${task.date} (${task.duration})</div>
+            <div class="task-item-duration">⏳ Срок: ${task.date} — ${task.duration}</div>
             <div class="task-item-comment">${task.comment}</div>
         `;
         container.appendChild(item);
@@ -192,7 +230,7 @@ function initFilterButtons() {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            renderLocalTasks(this.dataset.period);
+            renderPrimitiveTasks(this.dataset.period);
         });
     });
 }
@@ -205,7 +243,6 @@ function getFormattedDate(offset) {
     return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-// Установка календаря на текущую дату
 function initCalendar() {
     const dateInput = document.getElementById('date');
     if (dateInput) {
